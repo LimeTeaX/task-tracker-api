@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 
 const Navbar = ({ title }) => {
   const { user, logout } = useAuth();
@@ -16,7 +17,7 @@ const Navbar = ({ title }) => {
     <nav className="bg-white dark:bg-gray-800 shadow-sm px-4 py-3 transition-colors">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         <h1
-          className="text-xl font-bold text-blue-600 cursor-pointer"
+          className="text-xl font-bold text-blue-600 dark:text-white cursor-pointer"
           onClick={() => navigate('/dashboard')}
         >
           {title || 'Task Tracker'}
@@ -27,7 +28,7 @@ const Navbar = ({ title }) => {
             className="text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white px-2 py-1 rounded-md text-lg transition-colors"
             title={dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            {dark ? '☀️' : '🌙'}
+            {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <span className="text-sm text-gray-600 dark:text-gray-300">Hello, {user?.name}</span>
           <button

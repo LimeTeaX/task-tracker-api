@@ -102,8 +102,8 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Welcome, {user?.name}!</h2>
-            <p className="text-gray-500">Manage your projects here</p>
+            <h2 className="text-2xl font-bold dark:text-white">Welcome, {user?.name}!</h2>
+            <p className="text-gray-500 dark:text-gray-300">Manage your projects here</p>
           </div>
           <button
             onClick={openCreate}
@@ -122,7 +122,7 @@ const Dashboard = () => {
               className={`px-4 py-1.5 rounded-md text-sm font-medium capitalize transition-colors ${
                 filter === f
                   ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               {f}
@@ -134,7 +134,7 @@ const Dashboard = () => {
           <SkeletonList count={6} />
         ) : projects.length === 0 ? (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center shadow-sm">
-            <p className="text-gray-500 mb-4">
+            <p className="text-gray-500 dark:text-gray-300 mb-4">
               {filter === 'archived' ? 'No archived projects' : "You don't have any projects yet"}
             </p>
             {filter !== 'archived' && (
@@ -153,16 +153,16 @@ const Dashboard = () => {
                 project.status === 'archived' ? 'opacity-75' : ''
               }`}>
                 <div className="flex justify-between items-start mb-3">
-                  <h3 className="text-lg font-semibold truncate flex-1 mr-2">{project.name}</h3>
+                  <h3 className="text-lg font-semibold truncate flex-1 mr-2 dark:text-white">{project.name}</h3>
                   <span className={`text-xs px-2 py-1 rounded-full capitalize whitespace-nowrap ${STATUS_STYLES[project.status] || 'bg-blue-100 text-blue-700'}`}>
                     {project.status}
                   </span>
                 </div>
-                <p className="text-gray-500 text-sm mb-4 line-clamp-2">
+                <p className="text-gray-500 dark:text-gray-300 text-sm mb-4 line-clamp-2">
                   {project.description || 'No description'}
                 </p>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-400">{project.members_count || 1} members</span>
+                  <span className="text-gray-400 dark:text-gray-400">{project.members_count || 1} members</span>
                   <div className="flex gap-2">
                     {project.status === 'active' && (
                       <button
@@ -204,16 +204,16 @@ const Dashboard = () => {
           placeholder="Project Name *"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4 min-h-[80px]"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
-          <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => setShowCreateModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleCreate} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Create</button>
         </div>
       </Modal>
@@ -224,16 +224,16 @@ const Dashboard = () => {
           placeholder="Project Name *"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={form.description}
           onChange={(e) => setForm({ ...form, description: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4 min-h-[80px]"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
-          <button onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => setShowEditModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleUpdate} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
         </div>
       </Modal>

@@ -314,12 +314,12 @@ const ProjectDetail = () => {
 
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm">
           <div className="flex justify-between items-start mb-2">
-            <h1 className="text-2xl font-bold">{project.name}</h1>
+            <h1 className="text-2xl font-bold dark:text-white">{project.name}</h1>
             <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full capitalize">
               {project.status}
             </span>
           </div>
-          <p className="text-gray-500">{project.description || 'No description'}</p>
+          <p className="text-gray-500 dark:text-gray-300">{project.description || 'No description'}</p>
         </div>
 
         {/* Tabs */}
@@ -331,7 +331,7 @@ const ProjectDetail = () => {
               className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                 activeTab === tab.key
                   ? 'bg-blue-500 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
               {tab.label}
@@ -343,7 +343,7 @@ const ProjectDetail = () => {
         {activeTab === 'tasks' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Tasks</h2>
+              <h2 className="text-lg font-bold dark:text-white">Tasks</h2>
               <button
                 onClick={() => setShowTaskModal(true)}
                 className="bg-blue-500 text-white px-3 py-1.5 rounded-md text-sm hover:bg-blue-600"
@@ -352,11 +352,11 @@ const ProjectDetail = () => {
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-200">
+              <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-600">
               <select
                 value={taskFilters.status}
                 onChange={(e) => setTaskFilters(prev => ({ ...prev, status: e.target.value }))}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 bg-white dark:bg-gray-700 dark:text-gray-200"
               >
                 <option value="">All Status</option>
                 <option value="todo">To Do</option>
@@ -367,7 +367,7 @@ const ProjectDetail = () => {
               <select
                 value={taskFilters.priority || ''}
                 onChange={(e) => setTaskFilters(prev => ({ ...prev, priority: e.target.value }))}
-                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 bg-white dark:bg-gray-700 dark:text-gray-200"
               >
                 <option value="">All Priorities</option>
                 <option value="low">Low</option>
@@ -385,7 +385,7 @@ const ProjectDetail = () => {
               )}
             </div>
 
-            <p className="text-xs text-gray-400 mb-3">Drag task antar kolom untuk ubah status, atau pilih dari dropdown ⬇️</p>
+            <p className="text-xs text-gray-400 mb-3">Drag task antar kolom untuk ubah status, atau pilih dari dropdown</p>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -401,7 +401,7 @@ const ProjectDetail = () => {
                     <DroppableColumn key={status} id={status} label={statusLabels[status]} count={columnTasks.length} borderColor={statusColors[status]}>
                       <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
                         {columnTasks.length === 0 ? (
-                          <div className="text-gray-400 text-xs text-center py-4">Drop tasks here</div>
+                          <div className="text-gray-400 dark:text-gray-500 text-xs text-center py-4">Drop tasks here</div>
                         ) : (
                           <div className="flex flex-col gap-2">
                             {columnTasks.map(task => (
@@ -425,7 +425,7 @@ const ProjectDetail = () => {
         {activeTab === 'members' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">Team Members</h2>
+              <h2 className="text-lg font-bold dark:text-white">Team Members</h2>
               {isOwner && (
                 <button
                   onClick={() => setShowMemberModal(true)}
@@ -437,17 +437,17 @@ const ProjectDetail = () => {
             </div>
 
             {members.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No members yet</p>
+              <p className="text-gray-500 dark:text-gray-300 text-center py-8">No members yet</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {members.map(member => (
-                  <div key={member.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                  <div key={member.id} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
                     <div>
-                      <p className="font-medium">{member.name}</p>
-                      <p className="text-sm text-gray-500">{member.email}</p>
+                      <p className="font-medium dark:text-white">{member.name}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{member.email}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-gray-200 px-2 py-1 rounded-full capitalize">
+                      <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded-full capitalize dark:text-gray-200">
                         {member.project_role}
                       </span>
                       {isOwner && member.id !== user?.id && (
@@ -470,7 +470,7 @@ const ProjectDetail = () => {
         {activeTab === 'github' && (
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold">GitHub Integration</h2>
+              <h2 className="text-lg font-bold dark:text-white">GitHub Integration</h2>
               {isOwner && !repo && (
                 <button
                   onClick={() => setShowLinkRepoModal(true)}
@@ -483,15 +483,15 @@ const ProjectDetail = () => {
 
             {!repo ? (
               <div className="text-center py-8">
-                <p className="text-gray-500 mb-2">No GitHub repository linked</p>
-                {!isOwner && <p className="text-sm text-gray-400">Only the project owner can link a repository</p>}
+                <p className="text-gray-500 dark:text-gray-300 mb-2">No GitHub repository linked</p>
+                {!isOwner && <p className="text-sm text-gray-400 dark:text-gray-500">Only the project owner can link a repository</p>}
               </div>
             ) : (
               <div>
-                <div className="bg-gray-50 rounded-md p-4 mb-4">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-md p-4 mb-4">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium dark:text-white">
                         <a
                           href={repo.repo_url}
                           target="_blank"
@@ -502,7 +502,7 @@ const ProjectDetail = () => {
                         </a>
                       </p>
                       {repo.last_synced_at && (
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           Last synced: {new Date(repo.last_synced_at).toLocaleString()}
                         </p>
                       )}
@@ -527,17 +527,17 @@ const ProjectDetail = () => {
                   </div>
                 </div>
 
-                <h3 className="font-semibold mb-3">Recent Commits ({commits.length})</h3>
+                <h3 className="font-semibold mb-3 dark:text-white">Recent Commits ({commits.length})</h3>
                 {commits.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No commits synced yet. Click "Sync" to fetch commits.</p>
+                  <p className="text-gray-500 dark:text-gray-300 text-sm">No commits synced yet. Click "Sync" to fetch commits.</p>
                 ) : (
                   <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
                     {commits.map(commit => (
-                      <div key={commit.id} className="bg-gray-50 rounded-md p-3 border border-gray-200">
+                      <div key={commit.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3 border border-gray-200 dark:border-gray-600">
                         <div className="flex justify-between items-start">
                           <div className="flex-1 mr-2">
-                            <p className="text-sm font-medium truncate">{commit.message.split('\n')[0]}</p>
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className="text-sm font-medium truncate dark:text-gray-200">{commit.message.split('\n')[0]}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                               {commit.author} &middot; {new Date(commit.commit_date).toLocaleDateString()}
                             </p>
                           </div>
@@ -566,18 +566,18 @@ const ProjectDetail = () => {
           type="text" placeholder="Task Title *"
           value={newTask.title}
           onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={newTask.description}
           onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3 min-h-[80px]"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <select
           value={newTask.priority}
           onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 bg-white dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -588,12 +588,12 @@ const ProjectDetail = () => {
           type="date"
           value={newTask.due_date}
           onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <select
           value={newTask.assigneeId}
           onChange={(e) => setNewTask({ ...newTask, assigneeId: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="">Unassigned</option>
           {members.map(m => (
@@ -601,7 +601,7 @@ const ProjectDetail = () => {
           ))}
         </select>
         <div className="flex justify-end gap-2">
-          <button onClick={() => setShowTaskModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => setShowTaskModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleCreateTask} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Create Task</button>
         </div>
       </Modal>
@@ -612,18 +612,18 @@ const ProjectDetail = () => {
           type="text" placeholder="Task Title *"
           value={newTask.title}
           onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={newTask.description}
           onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3 min-h-[80px]"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <select
           value={newTask.priority}
           onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-3 bg-white dark:bg-gray-700 dark:text-gray-200"
         >
           <option value="low">Low</option>
           <option value="medium">Medium</option>
@@ -634,40 +634,40 @@ const ProjectDetail = () => {
           type="date"
           value={newTask.due_date}
           onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
-          <button onClick={() => { setShowEditTaskModal(false); setEditingTask(null); }} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => { setShowEditTaskModal(false); setEditingTask(null); }} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleEditTask} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
         </div>
       </Modal>
 
       {/* Add Member Modal */}
       <Modal isOpen={showMemberModal} onClose={() => setShowMemberModal(false)} title="Add Member">
-        <p className="text-sm text-gray-500 mb-3">Enter the user email to add them to this project.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-3">Enter the user email to add them to this project.</p>
         <input
           type="text" placeholder="User Email"
           value={newMemberEmail}
           onChange={(e) => setNewMemberEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
-          <button onClick={() => setShowMemberModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => setShowMemberModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleAddMember} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Add Member</button>
         </div>
       </Modal>
 
       {/* Link Repo Modal */}
       <Modal isOpen={showLinkRepoModal} onClose={() => setShowLinkRepoModal(false)} title="Link GitHub Repository">
-        <p className="text-sm text-gray-500 mb-3">Enter the GitHub repository URL (e.g. https://github.com/owner/repo).</p>
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-3">Enter the GitHub repository URL (e.g. https://github.com/owner/repo).</p>
         <input
           type="text" placeholder="https://github.com/owner/repo"
           value={repoUrl}
           onChange={(e) => setRepoUrl(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+          className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
-          <button onClick={() => setShowLinkRepoModal(false)} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={() => setShowLinkRepoModal(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
           <button onClick={handleLinkRepo} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Link</button>
         </div>
       </Modal>
@@ -678,15 +678,15 @@ const ProjectDetail = () => {
           <div>
             <div className="max-h-60 overflow-y-auto mb-4 space-y-3">
               {comments[showCommentModal]?.length === 0 ? (
-                <p className="text-gray-500 text-sm text-center py-4">No comments yet</p>
+                <p className="text-gray-500 dark:text-gray-300 text-sm text-center py-4">No comments yet</p>
               ) : (
                 comments[showCommentModal]?.map(c => (
-                  <div key={c.id} className="bg-gray-50 rounded-md p-3">
+                  <div key={c.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="text-xs text-gray-500">{c.user_name}</p>
-                        <p className="text-sm mt-1">{c.comment}</p>
-                        <p className="text-xs text-gray-400 mt-1">{new Date(c.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{c.user_name}</p>
+                            <p className="text-sm mt-1 dark:text-gray-200">{c.comment}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{new Date(c.created_at).toLocaleString()}</p>
                       </div>
                       {c.user_id === user?.id && (
                         <button onClick={() => handleDeleteComment(c.id)} className="text-red-500 text-xs hover:text-red-700 ml-2">
@@ -703,7 +703,7 @@ const ProjectDetail = () => {
                 type="text" placeholder="Write a comment..."
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="flex-1 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 text-sm bg-white dark:bg-gray-700 dark:text-gray-200"
                 onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
               />
               <button onClick={handleAddComment} className="px-3 py-2 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600">Send</button>
@@ -720,11 +720,11 @@ function DroppableColumn({ id, label, count, borderColor, children }) {
   return (
     <div
       ref={setNodeRef}
-      className={`bg-gray-50 rounded-lg p-3 border-t-4 ${borderColor} ${isOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''} min-h-[150px] transition-colors`}
+      className={`bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border-t-4 ${borderColor} ${isOver ? 'ring-2 ring-blue-400 bg-blue-50 dark:bg-blue-900/30' : ''} min-h-[150px] transition-colors dark:border-x dark:border-b dark:border-gray-600`}
     >
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-semibold text-sm">{label}</h3>
-        <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">{count}</span>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-semibold text-sm dark:text-gray-200">{label}</h3>
+          <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded-full dark:text-gray-200">{count}</span>
       </div>
       {children}
     </div>
@@ -742,9 +742,9 @@ function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, on
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`${isDragging ? 'opacity-50' : ''}`}>
-      <div className="bg-white rounded-md p-3 border border-gray-200 shadow-sm hover:shadow cursor-grab active:cursor-grabbing">
+      <div className="bg-white dark:bg-gray-700 rounded-md p-3 border border-gray-200 dark:border-gray-600 shadow-sm hover:shadow cursor-grab active:cursor-grabbing">
         <div className="flex justify-between items-start mb-1">
-          <p className="font-medium text-sm truncate flex-1">{task.title}</p>
+          <p className="font-medium text-sm truncate flex-1 dark:text-gray-100">{task.title}</p>
           <span className={`text-xs px-1.5 py-0.5 rounded ml-1 ${
             task.priority === 'critical' ? 'bg-red-100 text-red-700' :
             task.priority === 'high' ? 'bg-yellow-100 text-yellow-700' :
@@ -755,19 +755,9 @@ function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, on
           </span>
         </div>
         {task.assignee && (
-          <p className="text-xs text-gray-500 mb-1">{task.assignee.name}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{task.assignee.name}</p>
         )}
         <div className="flex items-center gap-2 mt-2">
-          <select
-            value={task.status}
-            onChange={(e) => { e.stopPropagation(); onStatusChange(task.id, e.target.value); }}
-            className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white cursor-pointer"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {Object.entries(STATUS_LABELS).map(([val, lbl]) => (
-              <option key={val} value={val}>{lbl}</option>
-            ))}
-          </select>
           <button onClick={(e) => { e.stopPropagation(); onEdit(task); }} className="text-xs text-yellow-600 hover:text-yellow-800">Edit</button>
           <button onClick={(e) => { e.stopPropagation(); onOpenComments(task.id); }} className="text-xs text-blue-600 hover:text-blue-800">
             {comments[task.id]?.length ? `${comments[task.id].length} comments` : 'Comment'}
