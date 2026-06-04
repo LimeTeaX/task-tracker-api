@@ -385,6 +385,7 @@ const ProjectDetail = () => {
               )}
             </div>
 
+            <p className="text-xs text-gray-400 mb-3">Drag task antar kolom untuk ubah status, atau pilih dari dropdown ⬇️</p>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -730,6 +731,8 @@ function DroppableColumn({ id, label, count, borderColor, children }) {
   );
 }
 
+const STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', review: 'Review', done: 'Done' };
+
 function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, onOpenComments }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -754,7 +757,17 @@ function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, on
         {task.assignee && (
           <p className="text-xs text-gray-500 mb-1">{task.assignee.name}</p>
         )}
-        <div className="flex gap-2 mt-1.5">
+        <div className="flex items-center gap-2 mt-2">
+          <select
+            value={task.status}
+            onChange={(e) => { e.stopPropagation(); onStatusChange(task.id, e.target.value); }}
+            className="text-xs border border-gray-300 rounded px-1.5 py-0.5 bg-white cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {Object.entries(STATUS_LABELS).map(([val, lbl]) => (
+              <option key={val} value={val}>{lbl}</option>
+            ))}
+          </select>
           <button onClick={(e) => { e.stopPropagation(); onEdit(task); }} className="text-xs text-yellow-600 hover:text-yellow-800">Edit</button>
           <button onClick={(e) => { e.stopPropagation(); onOpenComments(task.id); }} className="text-xs text-blue-600 hover:text-blue-800">
             {comments[task.id]?.length ? `${comments[task.id].length} comments` : 'Comment'}
