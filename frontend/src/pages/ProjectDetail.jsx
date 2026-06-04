@@ -146,7 +146,7 @@ const ProjectDetail = () => {
       title: task.title,
       description: task.description || '',
       priority: task.priority,
-      due_date: task.due_date ? task.due_date.split('T')[0] : '',
+      due_date: task.due_date ? new Date(task.due_date).toLocaleDateString('en-CA') : '',
       assigneeId: task.assignee_id || '',
     });
     setShowEditTaskModal(true);
