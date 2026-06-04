@@ -65,14 +65,18 @@ export async function syncCommits(projectId: string, userId: string) {
   const repo = await db('github_repos').where({ project_id: projectId }).first();
   if (!repo) throw new BadRequestError('No GitHub repository linked to this project');
 
+  const headers: Record<string, string> = {
+    'Accept': 'application/vnd.github.v3+json',
+    'User-Agent': 'task-tracker-api',
+  };
+  const githubToken = process.env.GITHUB_TOKEN;
+  if (githubToken) {
+    headers['Authorization'] = `Bearer ${githubToken}`;
+  }
+
   const response = await fetch(
     `https://api.github.com/repos/${repo.repo_owner}/${repo.repo_name}/commits?per_page=50`,
-    {
-      headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'task-tracker-api',
-      },
-    }
+    { headers }
   );
 
   if (!response.ok) {

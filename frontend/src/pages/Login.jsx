@@ -23,8 +23,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white rounded-lg p-8 shadow-sm w-full max-w-md">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center transition-colors">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm w-full max-w-md">
         <h1 className="text-2xl font-bold text-center mb-2">Task Tracker</h1>
         <h2 className="text-lg text-center mb-6">Login</h2>
 

@@ -5,6 +5,13 @@ import { projectAPI, taskAPI, githubAPI, commentAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import TaskCard from '../components/TaskCard';
+import { SkeletonDetail } from '../components/Skeleton';
+import {
+  DndContext, DragOverlay, closestCenter, useSensor, useSensors,
+  PointerSensor, useDroppable,
+} from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -13,8 +20,11 @@ const ProjectDetail = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
+  const [taskFilters, setTaskFilters] = useState({ status: '' });
 
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [newTask, setNewTask] = useState({ title: '', description: '', priority: 'medium', due_date: '', assigneeId: '' });
 
   const [showMemberModal, setShowMemberModal] = useState(false);
@@ -26,6 +36,7 @@ const ProjectDetail = () => {
   const [repoUrl, setRepoUrl] = useState('');
   const [syncing, setSyncing] = useState(false);
 
+  const [activeDragTask, setActiveDragTask] = useState(null);
   const [comments, setComments] = useState({});
   const [showCommentModal, setShowCommentModal] = useState(null);
   const [newComment, setNewComment] = useState('');
@@ -38,9 +49,10 @@ const ProjectDetail = () => {
   useEffect(() => {
     fetchProject();
     fetchMembers();
-    fetchTasks();
     fetchRepo();
   }, [id]);
+
+  useEffect(() => { fetchTasks(); }, [id, taskFilters]);
 
   const fetchProject = async () => {
     try {
@@ -60,7 +72,10 @@ const ProjectDetail = () => {
 
   const fetchTasks = async () => {
     try {
-      const response = await taskAPI.getByProject(id);
+      const params = {};
+      if (taskFilters.status) params.status = taskFilters.status;
+      if (taskFilters.priority) params.priority = taskFilters.priority;
+      const response = await taskAPI.getByProject(id, params);
       setTasks(response.data.data.data || []);
     } catch (error) { console.error('Failed to fetch tasks:', error); }
     finally { setLoading(false); }
@@ -122,6 +137,35 @@ const ProjectDetail = () => {
       } catch (error) {
         alert(error.response?.data?.error || 'Failed to delete task');
       }
+    }
+  };
+
+  const handleOpenEdit = (task) => {
+    setEditingTask(task);
+    setNewTask({
+      title: task.title,
+      description: task.description || '',
+      priority: task.priority,
+      due_date: task.due_date ? task.due_date.split('T')[0] : '',
+      assigneeId: task.assignee_id || '',
+    });
+    setShowEditTaskModal(true);
+  };
+
+  const handleEditTask = async () => {
+    if (!newTask.title.trim() || !editingTask) return;
+    try {
+      const response = await taskAPI.update(editingTask.id, {
+        title: newTask.title,
+        description: newTask.description,
+        priority: newTask.priority,
+        due_date: newTask.due_date || null,
+      });
+      setTasks(tasks.map(t => t.id === editingTask.id ? response.data.data : t));
+      setShowEditTaskModal(false);
+      setEditingTask(null);
+    } catch (error) {
+      alert(error.response?.data?.error || 'Failed to update task');
     }
   };
 
@@ -189,6 +233,24 @@ const ProjectDetail = () => {
     } finally { setSyncing(false); }
   };
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const taskId = active.id;
+    const newStatus = over.id;
+
+    if (newStatus === active.data.current?.status) return;
+    if (!['todo', 'in_progress', 'review', 'done'].includes(newStatus)) return;
+
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+    try { await taskAPI.updateStatus(taskId, newStatus); }
+    catch (error) { alert(error.response?.data?.error || 'Failed to update status'); fetchTasks(); }
+    setActiveDragTask(null);
+  };
+
   // Comment handlers
   const handleOpenComments = async (taskId) => {
     setShowCommentModal(taskId);
@@ -220,9 +282,12 @@ const ProjectDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
         <Navbar />
-        <div className="flex justify-center items-center h-64 text-gray-500">Loading...</div>
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-4 animate-pulse" />
+          <SkeletonDetail />
+        </div>
       </div>
     );
   }
@@ -236,7 +301,7 @@ const ProjectDetail = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
       <Navbar />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -247,7 +312,7 @@ const ProjectDetail = () => {
           &larr; Back to Dashboard
         </button>
 
-        <div className="bg-white rounded-lg p-6 mb-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 shadow-sm">
           <div className="flex justify-between items-start mb-2">
             <h1 className="text-2xl font-bold">{project.name}</h1>
             <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full capitalize">
@@ -258,7 +323,7 @@ const ProjectDetail = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 bg-white rounded-lg p-1 shadow-sm">
+        <div className="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm">
           {tabs.map(tab => (
             <button
               key={tab.key}
@@ -276,7 +341,7 @@ const ProjectDetail = () => {
 
         {/* Tasks Tab */}
         {activeTab === 'tasks' && (
-          <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Tasks</h2>
               <button
@@ -287,33 +352,77 @@ const ProjectDetail = () => {
               </button>
             </div>
 
-            {tasks.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No tasks yet. Click "New Task" to create one.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {tasks.map(task => (
-                  <div key={task.id}>
-                    <TaskCard
-                      task={task}
-                      onStatusChange={handleUpdateStatus}
-                      onDelete={handleDeleteTask}
-                    />
-                    <button
-                      onClick={() => handleOpenComments(task.id)}
-                      className="text-xs text-blue-600 hover:text-blue-800 mt-1 ml-1"
-                    >
-                      {comments[task.id]?.length ? `${comments[task.id].length} comments` : 'Add comment'}
-                    </button>
-                  </div>
-                ))}
+            <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-200">
+              <select
+                value={taskFilters.status}
+                onChange={(e) => setTaskFilters(prev => ({ ...prev, status: e.target.value }))}
+                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+              >
+                <option value="">All Status</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </select>
+              <select
+                value={taskFilters.priority || ''}
+                onChange={(e) => setTaskFilters(prev => ({ ...prev, priority: e.target.value }))}
+                className="text-sm border border-gray-300 rounded-md px-3 py-1.5 bg-white"
+              >
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="critical">Critical</option>
+              </select>
+              {(taskFilters.status || taskFilters.priority) && (
+                <button
+                  onClick={() => setTaskFilters({ status: '' })}
+                  className="text-sm text-red-500 hover:text-red-700 px-2"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={(e) => setActiveDragTask(tasks.find(t => t.id === e.active.id))}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {['todo', 'in_progress', 'review', 'done'].map(status => {
+                  const columnTasks = tasks.filter(t => t.status === status);
+                  const statusLabels = { todo: 'To Do', in_progress: 'In Progress', review: 'Review', done: 'Done' };
+                  const statusColors = { todo: 'border-gray-300', in_progress: 'border-blue-300', review: 'border-yellow-300', done: 'border-green-300' };
+                  return (
+                    <DroppableColumn key={status} id={status} label={statusLabels[status]} count={columnTasks.length} borderColor={statusColors[status]}>
+                      <SortableContext items={columnTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                        {columnTasks.length === 0 ? (
+                          <div className="text-gray-400 text-xs text-center py-4">Drop tasks here</div>
+                        ) : (
+                          <div className="flex flex-col gap-2">
+                            {columnTasks.map(task => (
+                              <SortableTaskCard key={task.id} task={task} onStatusChange={handleUpdateStatus} onDelete={handleDeleteTask} onEdit={handleOpenEdit} comments={comments} onOpenComments={handleOpenComments} />
+                            ))}
+                          </div>
+                        )}
+                      </SortableContext>
+                    </DroppableColumn>
+                  );
+                })}
               </div>
-            )}
+              <DragOverlay>
+                {activeDragTask ? <div className="bg-white rounded-lg p-4 shadow-lg border-2 border-blue-500 opacity-90"><p className="font-semibold">{activeDragTask.title}</p></div> : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         )}
 
         {/* Members Tab */}
         {activeTab === 'members' && (
-          <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">Team Members</h2>
               {isOwner && (
@@ -358,7 +467,7 @@ const ProjectDetail = () => {
 
         {/* GitHub Tab */}
         {activeTab === 'github' && (
-          <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm transition-colors">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-bold">GitHub Integration</h2>
               {isOwner && !repo && (
@@ -496,6 +605,42 @@ const ProjectDetail = () => {
         </div>
       </Modal>
 
+      {/* Edit Task Modal */}
+      <Modal isOpen={showEditTaskModal} onClose={() => { setShowEditTaskModal(false); setEditingTask(null); }} title="Edit Task">
+        <input
+          type="text" placeholder="Task Title *"
+          value={newTask.title}
+          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+        />
+        <textarea
+          placeholder="Description"
+          value={newTask.description}
+          onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3 min-h-[80px]"
+        />
+        <select
+          value={newTask.priority}
+          onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-3"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+          <option value="critical">Critical</option>
+        </select>
+        <input
+          type="date"
+          value={newTask.due_date}
+          onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 mb-4"
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={() => { setShowEditTaskModal(false); setEditingTask(null); }} className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300">Cancel</button>
+          <button onClick={handleEditTask} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
+        </div>
+      </Modal>
+
       {/* Add Member Modal */}
       <Modal isOpen={showMemberModal} onClose={() => setShowMemberModal(false)} title="Add Member">
         <p className="text-sm text-gray-500 mb-3">Enter the user email to add them to this project.</p>
@@ -568,5 +713,57 @@ const ProjectDetail = () => {
     </div>
   );
 };
+
+function DroppableColumn({ id, label, count, borderColor, children }) {
+  const { isOver, setNodeRef } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`bg-gray-50 rounded-lg p-3 border-t-4 ${borderColor} ${isOver ? 'ring-2 ring-blue-400 bg-blue-50' : ''} min-h-[150px] transition-colors`}
+    >
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-semibold text-sm">{label}</h3>
+        <span className="text-xs bg-gray-200 px-2 py-0.5 rounded-full">{count}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, onOpenComments }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: { status: task.status },
+  });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={`${isDragging ? 'opacity-50' : ''}`}>
+      <div className="bg-white rounded-md p-3 border border-gray-200 shadow-sm hover:shadow cursor-grab active:cursor-grabbing">
+        <div className="flex justify-between items-start mb-1">
+          <p className="font-medium text-sm truncate flex-1">{task.title}</p>
+          <span className={`text-xs px-1.5 py-0.5 rounded ml-1 ${
+            task.priority === 'critical' ? 'bg-red-100 text-red-700' :
+            task.priority === 'high' ? 'bg-yellow-100 text-yellow-700' :
+            task.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+            'bg-green-100 text-green-700'
+          }`}>
+            {task.priority}
+          </span>
+        </div>
+        {task.assignee && (
+          <p className="text-xs text-gray-500 mb-1">{task.assignee.name}</p>
+        )}
+        <div className="flex gap-2 mt-1.5">
+          <button onClick={(e) => { e.stopPropagation(); onEdit(task); }} className="text-xs text-yellow-600 hover:text-yellow-800">Edit</button>
+          <button onClick={(e) => { e.stopPropagation(); onOpenComments(task.id); }} className="text-xs text-blue-600 hover:text-blue-800">
+            {comments[task.id]?.length ? `${comments[task.id].length} comments` : 'Comment'}
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(task.id); }} className="text-xs text-red-500 hover:text-red-700 ml-auto">Delete</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default ProjectDetail;
