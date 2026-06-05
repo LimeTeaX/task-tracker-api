@@ -9,6 +9,11 @@ import {
   listTasksValidator,
 } from '../../validators/task.validator';
 import {
+  createCommentValidator,
+  taskIdParamValidator,
+  deleteCommentValidator,
+} from '../../validators/comment.validator';
+import {
   createTaskController,
   getTaskController,
   listTasksController,
@@ -17,6 +22,11 @@ import {
   updateStatusController,
   assignTaskController,
 } from '../../controllers/task.controller';
+import {
+  createCommentController,
+  getTaskCommentsController,
+  deleteCommentController,
+} from '../../controllers/comment.controller';
 
 const router = Router();
 
@@ -30,5 +40,9 @@ router.patch('/:id', updateTaskValidator, updateTaskController);
 router.delete('/:id', taskIdValidator, deleteTaskController);
 router.patch('/:id/status', updateStatusValidator, updateStatusController);
 router.post('/:id/assign', assignTaskValidator, assignTaskController);
+
+router.get('/:id/comments', taskIdParamValidator, getTaskCommentsController);
+router.post('/:id/comments', createCommentValidator, createCommentController);
+router.delete('/:id/comments/:commentId', deleteCommentValidator, deleteCommentController);
 
 export default router;

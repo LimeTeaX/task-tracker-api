@@ -1,36 +1,23 @@
-import { db } from '../config/database';
+import { projectRepo, projectMemberRepo } from '../repositories';
 
 export async function hasProjectAccess(userId: string, projectId: string): Promise<boolean> {
-  const project = await db('projects')
-    .where({ id: projectId, deleted_at: null })
-    .first();
-
+  const project = await projectRepo.findById(projectId);
   if (!project) return false;
   if (project.owner_id === userId) return true;
 
-  const member = await db('project_members')
-    .where({ project_id: projectId, user_id: userId })
-    .first();
-
+  const member = await projectMemberRepo.findByProjectAndUser(projectId, userId);
   return !!member;
 }
 
-export async function verifyProjectAccess(userId: string, projectId: string): Promise<void> {
-  const project = await db('projects')
-    .where({ id: projectId, deleted_at: null })
-    .first();
+export async function isProjectMember(userId: string, projectId: string): Promise<boolean> {
+  const member = await projectMemberRepo.findByProjectAndUser(projectId, userId);
+  return !!member;
+}
 
-  if (!project) {
-    throw new Error('Project not found');
-  }
+export async function isProjectManager(userId: string, projectId: string): Promise<boolean> {
+  const project = await projectRepo.findById(projectId);
+  if (project && project.owner_id === userId) return true;
 
-  if (project.owner_id === userId) return;
-
-  const member = await db('project_members')
-    .where({ project_id: projectId, user_id: userId })
-    .first();
-
-  if (!member) {
-    throw new Error('Access denied');
-  }
+  const member = await projectMemberRepo.findByProjectAndUserRole(projectId, userId, 'manager');
+  return !!member;
 }

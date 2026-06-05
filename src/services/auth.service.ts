@@ -1,8 +1,8 @@
-import { db } from '../config/database';
 import { hashPassword, comparePassword } from '../utils/hash.util';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.util';
 import { BadRequestError, UnauthorizedError, ConflictError } from '../utils/errors';
 import { v4 as uuidv4 } from 'uuid';
+import { userRepo, refreshTokenRepo } from '../repositories';
 
 export interface RegisterInput {
   email: string;
@@ -16,39 +16,34 @@ export interface LoginInput {
 }
 
 export async function register(input: RegisterInput) {
-  // Check if user already exists
-  const existingUser = await db('users').where({ email: input.email }).first();
+  const existingUser = await userRepo.findByEmail(input.email);
   if (existingUser) {
     throw new ConflictError('User already exists');
   }
 
-  // Hash password
   const hashedPassword = await hashPassword(input.password);
 
-  // Create user
   const userId = uuidv4();
-  await db('users').insert({
+  await userRepo.create({
     id: userId,
     email: input.email,
     password_hash: hashedPassword,
     name: input.name,
-    role: 'member', // Default role
+    role: 'member',
     created_at: new Date(),
     updated_at: new Date(),
   });
 
-  // Generate tokens
   const payload = { id: userId, email: input.email, role: 'member' };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Store refresh token
   const refreshTokenId = uuidv4();
-  await db('refresh_tokens').insert({
+  await refreshTokenRepo.create({
     id: refreshTokenId,
     user_id: userId,
     token: refreshToken,
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     created_at: new Date(),
   });
 
@@ -60,26 +55,22 @@ export async function register(input: RegisterInput) {
 }
 
 export async function login(input: LoginInput) {
-  // Find user
-  const user = await db('users').where({ email: input.email }).first();
+  const user = await userRepo.findByEmail(input.email);
   if (!user) {
     throw new UnauthorizedError('Invalid email or password');
   }
 
-  // Verify password
   const isPasswordValid = await comparePassword(input.password, user.password_hash);
   if (!isPasswordValid) {
     throw new UnauthorizedError('Invalid email or password');
   }
 
-  // Generate tokens
   const payload = { id: user.id, email: user.email, role: user.role };
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
 
-  // Store refresh token
   const refreshTokenId = uuidv4();
-  await db('refresh_tokens').insert({
+  await refreshTokenRepo.create({
     id: refreshTokenId,
     user_id: user.id,
     token: refreshToken,
@@ -95,29 +86,21 @@ export async function login(input: LoginInput) {
 }
 
 export async function logout(refreshToken: string) {
-  // Delete refresh token from database
-  await db('refresh_tokens').where({ token: refreshToken }).del();
+  await refreshTokenRepo.deleteByToken(refreshToken);
   return true;
 }
 
 export async function refreshAccessToken(refreshToken: string) {
-  // Find refresh token in database
-  const storedToken = await db('refresh_tokens')
-    .where({ token: refreshToken })
-    .where('expires_at', '>', new Date())
-    .first();
-
+  const storedToken = await refreshTokenRepo.findValidByToken(refreshToken);
   if (!storedToken) {
     throw new UnauthorizedError('Invalid or expired refresh token');
   }
 
-  // Get user
-  const user = await db('users').where({ id: storedToken.user_id }).first();
+  const user = await userRepo.findById(storedToken.user_id);
   if (!user) {
     throw new UnauthorizedError('User not found');
   }
 
-  // Generate new access token
   const payload = { id: user.id, email: user.email, role: user.role };
   const newAccessToken = generateAccessToken(payload);
 

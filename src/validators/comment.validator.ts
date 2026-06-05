@@ -1,7 +1,7 @@
 import { body, param, query } from 'express-validator';
 
 export const createCommentValidator = [
-  param('taskId')
+  param('id')
     .isUUID()
     .withMessage('Invalid task ID'),
   body('comment')
@@ -13,7 +13,7 @@ export const createCommentValidator = [
 ];
 
 export const taskIdParamValidator = [
-  param('taskId')
+  param('id')
     .isUUID()
     .withMessage('Invalid task ID'),
 ];

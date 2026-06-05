@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { v4 as uuidv4 } from 'uuid';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { logger } from './config/logger';
 
@@ -10,7 +11,6 @@ import authRoutes from './routes/v1/auth.routes';
 import projectRoutes from './routes/v1/project.routes';
 import taskRoutes from './routes/v1/task.routes';
 import githubRoutes from './routes/v1/github.routes';
-import commentRoutes from './routes/v1/comment.routes';
 
 const app = express();
 
@@ -37,6 +37,14 @@ app.use('/api', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Request ID
+app.use((req, res, next) => {
+  const requestId = uuidv4();
+  res.setHeader('X-Request-Id', requestId);
+  (req as any).requestId = requestId;
+  next();
+});
+
 // Request logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`);
@@ -62,7 +70,7 @@ app.get('/api/v1', (req, res) => {
       projects: '/api/v1/projects',
       tasks: '/api/v1/tasks',
       github: '/api/v1/github',
-      comments: '/api/v1/task/:taskId/comments',
+      comments: '/api/v1/tasks/:id/comments',
     },
   });
 });
@@ -71,7 +79,6 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/github', githubRoutes);
-app.use('/api/v1', commentRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -1,18 +1,26 @@
-const PRIORITY_STYLES = {
+import { Task } from '../types';
+
+interface TaskCardProps {
+  task: Task;
+  onDelete: (taskId: string) => void;
+  onEdit?: (task: Task) => void;
+}
+
+const PRIORITY_STYLES: Record<string, string> = {
   low: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   high: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   critical: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
 };
 
-const STATUS_STYLES = {
+const STATUS_STYLES: Record<string, string> = {
   todo: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200',
   in_progress: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
   review: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
   done: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
 };
 
-const TaskCard = ({ task, onDelete, onEdit }) => {
+const TaskCard = ({ task, onDelete, onEdit }: TaskCardProps) => {
   return (
     <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-sm transition-shadow">
       <div className="flex justify-between items-start">

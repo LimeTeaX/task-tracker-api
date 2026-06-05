@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { projectAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
 import { SkeletonList } from '../components/Skeleton';
+import { Project } from '../types';
 
 const FILTERS = ['active', 'archived', 'all'];
 
-const STATUS_STYLES = {
+const STATUS_STYLES: Record<string, string> = {
   active: 'bg-green-100 text-green-700',
   archived: 'bg-gray-200 text-gray-600',
 };
 
 const Dashboard = () => {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('active');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editProject, setEditProject] = useState(null);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [filter, setFilter] = useState<string>('active');
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editProject, setEditProject] = useState<Project | null>(null);
+  const [form, setForm] = useState<{ name: string; description: string }>({ name: '', description: '' });
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -32,7 +33,7 @@ const Dashboard = () => {
       const params = filter === 'all' ? { status: 'all' } : { status: filter };
       const response = await projectAPI.getAll(params);
       setProjects(response.data.data.data || []);
-    } catch (error) {
+    } catch (error: any) {
       if (error.response?.status === 401) { logout(); navigate('/login'); }
     } finally { setLoading(false); }
   };
@@ -42,7 +43,7 @@ const Dashboard = () => {
     setShowCreateModal(true);
   };
 
-  const openEdit = (project) => {
+  const openEdit = (project: Project) => {
     setEditProject(project);
     setForm({ name: project.name, description: project.description || '' });
     setShowEditModal(true);
@@ -54,7 +55,7 @@ const Dashboard = () => {
       const response = await projectAPI.create(form);
       setProjects([response.data.data, ...projects]);
       setShowCreateModal(false);
-    } catch (error) {
+    } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to create project');
     }
   };
@@ -66,30 +67,30 @@ const Dashboard = () => {
       setProjects(projects.map(p => p.id === editProject.id ? response.data.data : p));
       setShowEditModal(false);
       setEditProject(null);
-    } catch (error) {
+    } catch (error: any) {
       alert(error.response?.data?.error || 'Failed to update project');
     }
   };
 
-  const handleArchive = async (project) => {
+  const handleArchive = async (project: Project) => {
     const newStatus = project.status === 'archived' ? 'active' : 'archived';
     const label = newStatus === 'archived' ? 'archive' : 'unarchive';
     if (window.confirm(`Are you sure you want to ${label} "${project.name}"?`)) {
       try {
         const response = await projectAPI.update(project.id, { status: newStatus });
         setProjects(projects.map(p => p.id === project.id ? response.data.data : p));
-      } catch (error) {
+      } catch (error: any) {
         alert(error.response?.data?.error || `Failed to ${label} project`);
       }
     }
   };
 
-  const handleDelete = async (projectId) => {
+  const handleDelete = async (projectId: string) => {
     if (window.confirm('Are you sure you want to permanently delete this project?')) {
       try {
         await projectAPI.delete(projectId);
         setProjects(projects.filter(p => p.id !== projectId));
-      } catch (error) {
+      } catch (error: any) {
         alert(error.response?.data?.error || 'Failed to delete project');
       }
     }
@@ -113,7 +114,6 @@ const Dashboard = () => {
           </button>
         </div>
 
-        {/* Filter tabs */}
         <div className="flex gap-1 mb-6 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-sm w-fit">
           {FILTERS.map(f => (
             <button
@@ -203,13 +203,13 @@ const Dashboard = () => {
           type="text"
           placeholder="Project Name *"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">
@@ -223,13 +223,13 @@ const Dashboard = () => {
           type="text"
           placeholder="Project Name *"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })}
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <textarea
           placeholder="Description"
           value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })}
           className="w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 mb-4 min-h-[80px] bg-white dark:bg-gray-700 dark:text-gray-200"
         />
         <div className="flex justify-end gap-2">

@@ -1,12 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, ReactNode } from 'react';
 
-const Modal = ({ isOpen, onClose, title, children }) => {
-  const overlayRef = useRef(null);
+interface ModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  children: ReactNode;
+}
+
+const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
+  const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleEscape = (e) => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', handleEscape);

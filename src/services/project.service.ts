@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+import { hasProjectAccess, isProjectManager } from '../utils/access';
 
 export interface CreateProjectInput {
   name: string;
@@ -36,7 +37,8 @@ export async function createProject(input: CreateProjectInput) {
     joined_at: new Date(),
   });
 
-  return getProjectById(projectId, input.ownerId);
+  const created = await db('projects').where({ id: projectId }).first();
+  return { ...created, members_count: 1 };
 }
 
 export async function getProjectById(projectId: string, userId: string) {
@@ -48,9 +50,8 @@ export async function getProjectById(projectId: string, userId: string) {
     throw new NotFoundError('Project not found');
   }
 
-  // Check if user has access (owner or member)
-  const hasAccess = await checkUserProjectAccess(userId, projectId);
-  if (!hasAccess && project.owner_id !== userId) {
+  const userHasAccess = await hasProjectAccess(userId, projectId);
+  if (!userHasAccess) {
     throw new ForbiddenError('You do not have access to this project');
   }
 
@@ -128,18 +129,17 @@ export async function listProjects(userId: string, filters: { status?: string; p
 }
 
 export async function updateProject(projectId: string, userId: string, input: UpdateProjectInput) {
-  // Check if user is owner or manager
-  const isAuthorized = await isProjectManager(userId, projectId);
-  if (!isAuthorized) {
-    throw new ForbiddenError('Only project owner or manager can update this project');
-  }
-
   const project = await db('projects')
     .where({ id: projectId, deleted_at: null })
     .first();
 
   if (!project) {
     throw new NotFoundError('Project not found');
+  }
+
+  const isAuthorized = await isProjectManager(userId, projectId);
+  if (!isAuthorized) {
+    throw new ForbiddenError('Only project owner or manager can update this project');
   }
 
   await db('projects')
@@ -149,7 +149,12 @@ export async function updateProject(projectId: string, userId: string, input: Up
       updated_at: new Date(),
     });
 
-  return getProjectById(projectId, userId);
+  const [updated, membersCount] = await Promise.all([
+    db('projects').where({ id: projectId }).first(),
+    db('project_members').where({ project_id: projectId }).count('id as count').first(),
+  ]);
+
+  return { ...updated, members_count: parseInt(String(membersCount?.count || 0)) };
 }
 
 export async function deleteProject(projectId: string, userId: string, hardDelete = false) {
@@ -255,9 +260,8 @@ export async function removeProjectMember(projectId: string, userId: string, tar
 }
 
 export async function getProjectMembers(projectId: string, userId: string) {
-  // Check if user has access
-  const hasAccess = await checkUserProjectAccess(userId, projectId);
-  if (!hasAccess) {
+  const userHasAccess = await hasProjectAccess(userId, projectId);
+  if (!userHasAccess) {
     throw new ForbiddenError('You do not have access to this project');
   }
 
@@ -276,29 +280,3 @@ export async function getProjectMembers(projectId: string, userId: string) {
   return members;
 }
 
-// Helper functions
-async function checkUserProjectAccess(userId: string, projectId: string): Promise<boolean> {
-  const member = await db('project_members')
-    .where({ project_id: projectId, user_id: userId })
-    .first();
-  
-  return !!member;
-}
-
-async function isProjectManager(userId: string, projectId: string): Promise<boolean> {
-  // Check if user is project owner
-  const project = await db('projects')
-    .where({ id: projectId, deleted_at: null })
-    .first();
-
-  if (project && project.owner_id === userId) {
-    return true;
-  }
-
-  // Check if user is project manager
-  const member = await db('project_members')
-    .where({ project_id: projectId, user_id: userId, role: 'manager' })
-    .first();
-
-  return !!member;
-}

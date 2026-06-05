@@ -1,3 +1,11 @@
+interface SkeletonListProps {
+  count?: number;
+}
+
+interface SkeletonTaskListProps {
+  count?: number;
+}
+
 const SkeletonCard = () => (
   <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm animate-pulse">
     <div className="flex justify-between mb-3">
@@ -13,7 +21,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-const SkeletonList = ({ count = 6 }) => (
+const SkeletonList = ({ count = 6 }: SkeletonListProps) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
     {Array.from({ length: count }).map((_, i) => (
       <SkeletonCard key={i} />
@@ -37,7 +45,7 @@ const SkeletonTask = () => (
   </div>
 );
 
-const SkeletonTaskList = ({ count = 4 }) => (
+const SkeletonTaskList = ({ count = 4 }: SkeletonTaskListProps) => (
   <div className="flex flex-col gap-3">
     {Array.from({ length: count }).map((_, i) => (
       <SkeletonTask key={i} />

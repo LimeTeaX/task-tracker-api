@@ -10,7 +10,18 @@ import { logger } from './config/logger';
 
 const PORT = process.env.PORT || 3000;
 
+function validateRequiredEnv() {
+  const required = ['JWT_SECRET', 'JWT_REFRESH_SECRET', 'DATABASE_URL'];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    logger.error(`Missing required environment variables: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
 async function startServer() {
+  validateRequiredEnv();
+
   // Test database connection
   const isDbConnected = await testDatabaseConnection();
   if (!isDbConnected) {

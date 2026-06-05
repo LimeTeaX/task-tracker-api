@@ -1,8 +1,8 @@
-import { db } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
 import { hasProjectAccess } from '../utils/access';
 import { logger } from '../config/logger';
+import { projectRepo, githubRepoRepo, githubCommitRepo } from '../repositories';
 
 function parseGithubUrl(url: string): { owner: string; repo: string } | null {
   const match = url.match(/github\.com[\/:]([^\/]+)\/([^\/\.]+)/);
@@ -17,23 +17,23 @@ interface LinkRepoInput {
 }
 
 export async function linkRepo(input: LinkRepoInput) {
-  const project = await db('projects').where({ id: input.projectId, deleted_at: null }).first();
+  const project = await projectRepo.findById(input.projectId);
   if (!project) throw new NotFoundError('Project not found');
   if (project.owner_id !== input.userId) throw new ForbiddenError('Only project owner can link a repository');
 
   const parsed = parseGithubUrl(input.repoUrl);
   if (!parsed) throw new BadRequestError('Invalid GitHub repository URL');
 
-  const existing = await db('github_repos').where({ project_id: input.projectId }).first();
+  const existing = await githubRepoRepo.findByProjectId(input.projectId);
   if (existing) {
-    await db('github_repos').where({ project_id: input.projectId }).update({
+    await githubRepoRepo.updateByProjectId(input.projectId, {
       repo_url: input.repoUrl,
       repo_owner: parsed.owner,
       repo_name: parsed.repo,
       updated_at: new Date(),
     });
   } else {
-    await db('github_repos').insert({
+    await githubRepoRepo.create({
       project_id: input.projectId,
       repo_url: input.repoUrl,
       repo_owner: parsed.owner,
@@ -43,27 +43,27 @@ export async function linkRepo(input: LinkRepoInput) {
     });
   }
 
-  return db('github_repos').where({ project_id: input.projectId }).first();
+  return githubRepoRepo.findByProjectId(input.projectId);
 }
 
 export async function unlinkRepo(projectId: string, userId: string) {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
+  const project = await projectRepo.findById(projectId);
   if (!project) throw new NotFoundError('Project not found');
   if (project.owner_id !== userId) throw new ForbiddenError('Only project owner can unlink a repository');
 
-  await db('github_commits').where({ project_id: projectId }).del();
-  await db('github_repos').where({ project_id: projectId }).del();
+  await githubCommitRepo.deleteByProjectId(projectId);
+  await githubRepoRepo.deleteByProjectId(projectId);
   return { success: true, message: 'Repository unlinked successfully' };
 }
 
 export async function syncCommits(projectId: string, userId: string) {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
+  const project = await projectRepo.findById(projectId);
   if (!project) throw new NotFoundError('Project not found');
 
   const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
-  const repo = await db('github_repos').where({ project_id: projectId }).first();
+  const repo = await githubRepoRepo.findByProjectId(projectId);
   if (!repo) throw new BadRequestError('No GitHub repository linked to this project');
 
   const headers: Record<string, string> = {
@@ -86,10 +86,10 @@ export async function syncCommits(projectId: string, userId: string) {
   }
 
   const commits = await response.json() as any[];
-  const existingShas = await db('github_commits')
-    .where({ project_id: projectId })
-    .whereIn('commit_sha', commits.map(c => c.sha))
-    .select('commit_sha');
+  const existingShas = await githubCommitRepo.findExistingShas(
+    projectId,
+    commits.map(c => c.sha)
+  );
 
   const existingSet = new Set(existingShas.map(c => c.commit_sha));
   const newCommits = commits.filter(c => !existingSet.has(c.sha));
@@ -106,10 +106,10 @@ export async function syncCommits(projectId: string, userId: string) {
       synced_at: new Date(),
     }));
 
-    await db('github_commits').insert(batch);
+    await githubCommitRepo.batchCreate(batch);
   }
 
-  await db('github_repos').where({ project_id: projectId }).update({
+  await githubRepoRepo.updateByProjectId(projectId, {
     last_synced_at: new Date(),
     updated_at: new Date(),
   });
@@ -118,29 +118,22 @@ export async function syncCommits(projectId: string, userId: string) {
 }
 
 export async function getCommits(projectId: string, userId: string) {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
+  const project = await projectRepo.findById(projectId);
   if (!project) throw new NotFoundError('Project not found');
 
   const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
-  const commits = await db('github_commits')
-    .where({ project_id: projectId })
-    .orderBy('commit_date', 'desc')
-    .limit(50);
-
-  return commits;
+  return githubCommitRepo.findByProjectId(projectId);
 }
 
 export async function getLinkedRepo(projectId: string, userId: string) {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
+  const project = await projectRepo.findById(projectId);
   if (!project) throw new NotFoundError('Project not found');
 
   const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
-  const repo = await db('github_repos').where({ project_id: projectId }).first();
+  const repo = await githubRepoRepo.findByProjectId(projectId);
   return repo || null;
 }
-
-

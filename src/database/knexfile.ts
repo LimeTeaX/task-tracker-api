@@ -8,7 +8,14 @@ dotenvConfig({ path: resolve(__dirname, '../../.env') });
 const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'pg',
-    connection: process.env.DATABASE_URL,
+    connection: {
+      connectionString: process.env.DATABASE_URL,
+      ssl: { rejectUnauthorized: false },
+    },
+    pool: {
+      min: 0,
+      max: 2,
+    },
     migrations: {
       directory: './migrations',
       extension: 'ts',
@@ -20,7 +27,7 @@ const config: { [key: string]: Knex.Config } = {
   },
   test: {
     client: 'pg',
-    connection: process.env.DATABASE_URL,
+    connection: process.env.TEST_DATABASE_URL || process.env.DATABASE_URL,
     migrations: {
       directory: './migrations',
       extension: 'ts',

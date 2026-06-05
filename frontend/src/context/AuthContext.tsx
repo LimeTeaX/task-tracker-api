@@ -1,13 +1,18 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 import { authAPI } from '../services/api';
+import { User, AuthContextType } from '../types';
 
-const AuthContext = createContext();
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+};
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -18,7 +23,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string) => {
     const response = await authAPI.login({ email, password });
     const { accessToken, refreshToken, user } = response.data.data;
     localStorage.setItem('accessToken', accessToken);
@@ -28,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
-  const register = async (email, password, name) => {
+  const register = async (email: string, password: string, name: string) => {
     const response = await authAPI.register({ email, password, name });
     const { accessToken, refreshToken, user } = response.data.data;
     localStorage.setItem('accessToken', accessToken);

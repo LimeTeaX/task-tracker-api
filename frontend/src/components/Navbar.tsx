@@ -3,7 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
 
-const Navbar = ({ title }) => {
+interface NavbarProps {
+  title?: string;
+}
+
+const Navbar = ({ title }: NavbarProps) => {
   const { user, logout } = useAuth();
   const { dark, toggle } = useTheme();
   const navigate = useNavigate();
