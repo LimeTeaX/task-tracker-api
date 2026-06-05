@@ -1,24 +1,8 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { ValidationError } from '../utils/errors';
+import { getParamId, getParamUserId } from '../utils/param';
 import * as projectService from '../services/project.service';
-
-// Helper untuk memastikan params.id adalah string
-function getParamId(params: any): string {
-  const id = params.id;
-  if (Array.isArray(id)) {
-    return id[0];
-  }
-  return id;
-}
-
-function getParamUserId(params: any): string {
-  const userId = params.userId;
-  if (Array.isArray(userId)) {
-    return userId[0];
-  }
-  return userId;
-}
 
 export async function createProjectController(req: Request, res: Response) {
   const errors = validationResult(req);

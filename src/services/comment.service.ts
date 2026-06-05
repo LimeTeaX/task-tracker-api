@@ -1,12 +1,13 @@
 import { db } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
+import { hasProjectAccess } from '../utils/access';
 
 export async function createComment(taskId: string, userId: string, comment: string) {
   const task = await db('tasks').where({ id: taskId, deleted_at: null }).first();
   if (!task) throw new NotFoundError('Task not found');
 
-  const hasAccess = await checkTaskAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this task');
 
   const commentId = uuidv4();
@@ -25,7 +26,7 @@ export async function getTaskComments(taskId: string, userId: string) {
   const task = await db('tasks').where({ id: taskId, deleted_at: null }).first();
   if (!task) throw new NotFoundError('Task not found');
 
-  const hasAccess = await checkTaskAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this task');
 
   const comments = await db('task_comments')
@@ -69,10 +70,4 @@ export async function deleteComment(commentId: string, userId: string) {
   return { success: true };
 }
 
-async function checkTaskAccess(userId: string, projectId: string): Promise<boolean> {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
-  if (!project) return false;
-  if (project.owner_id === userId) return true;
-  const member = await db('project_members').where({ project_id: projectId, user_id: userId }).first();
-  return !!member;
-}
+

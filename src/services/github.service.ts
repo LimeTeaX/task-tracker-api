@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
+import { hasProjectAccess } from '../utils/access';
 import { logger } from '../config/logger';
 
 function parseGithubUrl(url: string): { owner: string; repo: string } | null {
@@ -59,7 +60,7 @@ export async function syncCommits(projectId: string, userId: string) {
   const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
   if (!project) throw new NotFoundError('Project not found');
 
-  const hasAccess = await checkProjectAccess(userId, projectId);
+  const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
   const repo = await db('github_repos').where({ project_id: projectId }).first();
@@ -120,7 +121,7 @@ export async function getCommits(projectId: string, userId: string) {
   const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
   if (!project) throw new NotFoundError('Project not found');
 
-  const hasAccess = await checkProjectAccess(userId, projectId);
+  const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
   const commits = await db('github_commits')
@@ -135,17 +136,11 @@ export async function getLinkedRepo(projectId: string, userId: string) {
   const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
   if (!project) throw new NotFoundError('Project not found');
 
-  const hasAccess = await checkProjectAccess(userId, projectId);
+  const hasAccess = await hasProjectAccess(userId, projectId);
   if (!hasAccess) throw new ForbiddenError('You do not have access to this project');
 
   const repo = await db('github_repos').where({ project_id: projectId }).first();
   return repo || null;
 }
 
-async function checkProjectAccess(userId: string, projectId: string): Promise<boolean> {
-  const project = await db('projects').where({ id: projectId, deleted_at: null }).first();
-  if (!project) return false;
-  if (project.owner_id === userId) return true;
-  const member = await db('project_members').where({ project_id: projectId, user_id: userId }).first();
-  return !!member;
-}
+

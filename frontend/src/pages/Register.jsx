@@ -26,8 +26,8 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center transition-colors">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-8 shadow-sm w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-2">Task Tracker</h1>
-        <h2 className="text-lg text-center mb-6">Register</h2>
+        <h1 className="text-2xl font-bold text-center mb-2 dark:text-white">Task Tracker</h1>
+        <h2 className="text-lg text-center mb-6 dark:text-gray-300">Register</h2>
 
         {error && (
           <div className="bg-red-100 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-4 text-sm">
@@ -37,7 +37,7 @@ const Register = () => {
 
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block mb-1.5 text-sm font-medium">Name</label>
+            <label className="block mb-1.5 text-sm font-medium dark:text-gray-200">Name</label>
             <input
               type="text"
               value={name}
@@ -47,7 +47,7 @@ const Register = () => {
             />
           </div>
           <div className="mb-4">
-            <label className="block mb-1.5 text-sm font-medium">Email</label>
+            <label className="block mb-1.5 text-sm font-medium dark:text-gray-200">Email</label>
             <input
               type="email"
               value={email}
@@ -57,7 +57,7 @@ const Register = () => {
             />
           </div>
           <div className="mb-6">
-            <label className="block mb-1.5 text-sm font-medium">Password</label>
+            <label className="block mb-1.5 text-sm font-medium dark:text-gray-200">Password</label>
             <input
               type="password"
               value={password}
@@ -65,7 +65,7 @@ const Register = () => {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-200"
               required
             />
-            <p className="text-xs text-gray-500 mt-1">Minimal 8 karakter, 1 huruf besar, 1 angka, 1 simbol</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimal 8 karakter, 1 huruf besar, 1 angka, 1 simbol</p>
           </div>
           <button
             type="submit"
@@ -76,7 +76,7 @@ const Register = () => {
           </button>
         </form>
 
-        <p className="text-center mt-4 text-sm text-gray-600">
+        <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-400">
           Already have an account?{' '}
           <Link to="/login" className="text-blue-600 hover:underline">Login</Link>
         </p>

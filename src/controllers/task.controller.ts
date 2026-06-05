@@ -1,24 +1,10 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { ValidationError } from '../utils/errors';
+import { getParamId } from '../utils/param';
 import * as taskService from '../services/task.service';
 
-// Extend Request type to include user
-interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role: string;
-  };
-}
-
-function getParamId(params: any): string {
-  const id = params.id;
-  if (Array.isArray(id)) return id[0];
-  return id;
-}
-
-export async function createTaskController(req: AuthRequest, res: Response) {
+export async function createTaskController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());
@@ -37,7 +23,7 @@ export async function createTaskController(req: AuthRequest, res: Response) {
   res.status(201).json({ success: true, data: result });
 }
 
-export async function getTaskController(req: AuthRequest, res: Response) {
+export async function getTaskController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());
@@ -49,7 +35,7 @@ export async function getTaskController(req: AuthRequest, res: Response) {
   res.status(200).json({ success: true, data: result });
 }
 
-export async function listTasksController(req: AuthRequest, res: Response) {
+export async function listTasksController(req: Request, res: Response) {
   const result = await taskService.listTasks(req.user!.id, {
     projectId: req.query.projectId as string,
     status: req.query.status as string,
@@ -62,7 +48,7 @@ export async function listTasksController(req: AuthRequest, res: Response) {
   res.status(200).json({ success: true, data: result });
 }
 
-export async function updateTaskController(req: AuthRequest, res: Response) {
+export async function updateTaskController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());
@@ -79,7 +65,7 @@ export async function updateTaskController(req: AuthRequest, res: Response) {
   res.status(200).json({ success: true, data: result });
 }
 
-export async function deleteTaskController(req: AuthRequest, res: Response) {
+export async function deleteTaskController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());
@@ -91,7 +77,7 @@ export async function deleteTaskController(req: AuthRequest, res: Response) {
   res.status(204).send();
 }
 
-export async function updateStatusController(req: AuthRequest, res: Response) {
+export async function updateStatusController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());
@@ -103,7 +89,7 @@ export async function updateStatusController(req: AuthRequest, res: Response) {
   res.status(200).json({ success: true, data: result });
 }
 
-export async function assignTaskController(req: AuthRequest, res: Response) {
+export async function assignTaskController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ValidationError('Validation failed', errors.array());

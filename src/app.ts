@@ -52,13 +52,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/projects', projectRoutes);
-app.use('/api/v1/tasks', taskRoutes);
-app.use('/api/v1/github', githubRoutes);
-app.use('/api/v1', commentRoutes);
-
+// API Routes — public info endpoint (before auth middleware)
 app.get('/api/v1', (req, res) => {
   res.json({
     message: 'Task Tracker API v1',
@@ -72,6 +66,12 @@ app.get('/api/v1', (req, res) => {
     },
   });
 });
+
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/github', githubRoutes);
+app.use('/api/v1', commentRoutes);
 
 // 404 handler
 app.use((req, res) => {

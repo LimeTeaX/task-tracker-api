@@ -1,13 +1,8 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import { ValidationError } from '../utils/errors';
+import { getParamId } from '../utils/param';
 import * as githubService from '../services/github.service';
-
-function getParamId(params: any): string {
-  const id = params.id;
-  if (Array.isArray(id)) return id[0];
-  return id;
-}
 
 export async function linkRepoController(req: Request, res: Response) {
   const errors = validationResult(req);

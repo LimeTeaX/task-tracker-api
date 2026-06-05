@@ -1,6 +1,7 @@
 import { db } from '../config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { NotFoundError, ForbiddenError, BadRequestError } from '../utils/errors';
+import { hasProjectAccess } from '../utils/access';
 
 export interface CreateTaskInput {
   title: string;
@@ -21,7 +22,7 @@ export interface UpdateTaskInput {
 
 export async function createTask(input: CreateTaskInput) {
   // Check if user has access to project
-  const hasAccess = await checkProjectAccess(input.createdBy, input.projectId);
+  const hasAccess = await hasProjectAccess(input.createdBy, input.projectId);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this project');
   }
@@ -55,25 +56,30 @@ export async function getTaskById(taskId: string, userId: string) {
   }
 
   // Check access
-  const hasAccess = await checkProjectAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this task');
   }
 
-  // Get assignee name
-  let assignee = null;
-  if (task.assignee_id) {
-    const user = await db('users').where({ id: task.assignee_id }).first();
-    assignee = { id: user.id, name: user.name, email: user.email };
-  }
-
-  // Get creator name
-  const creator = await db('users').where({ id: task.created_by }).first();
+  const taskWithUsers = await db('tasks')
+    .where('tasks.id', taskId)
+    .select(
+      'tasks.*',
+      'assignee_users.name as assignee_name',
+      'assignee_users.email as assignee_email',
+      'creator_users.name as created_by_name'
+    )
+    .leftJoin('users as assignee_users', 'tasks.assignee_id', 'assignee_users.id')
+    .leftJoin('users as creator_users', 'tasks.created_by', 'creator_users.id')
+    .first();
 
   return {
-    ...task,
-    assignee,
-    created_by_name: creator?.name,
+    ...taskWithUsers,
+    assignee: taskWithUsers.assignee_id
+      ? { id: taskWithUsers.assignee_id, name: taskWithUsers.assignee_name, email: taskWithUsers.assignee_email }
+      : null,
+    assignee_name: undefined,
+    assignee_email: undefined,
   };
 }
 
@@ -95,7 +101,7 @@ export async function listTasks(userId: string, filters: {
 
   // Filter by project (with access check)
   if (filters.projectId) {
-    const hasAccess = await checkProjectAccess(userId, filters.projectId);
+    const hasAccess = await hasProjectAccess(userId, filters.projectId);
     if (!hasAccess) {
       throw new ForbiddenError('You do not have access to this project');
     }
@@ -125,24 +131,26 @@ export async function listTasks(userId: string, filters: {
   const countResult = await query.clone().count('id as count').first();
   const total = parseInt(String(countResult?.count || 0));
 
-  // Get paginated results
+  // Get paginated results with assignee names in a single query
   const tasks = await query
-    .select('tasks.*')
+    .select('tasks.*', 'assignee_users.name as assignee_name', 'assignee_users.email as assignee_email')
+    .leftJoin('users as assignee_users', 'tasks.assignee_id', 'assignee_users.id')
     .orderBy('tasks.created_at', 'desc')
     .limit(limit)
     .offset(offset);
 
-  // Get assignee names
-  const tasksWithDetails = await Promise.all(
-    tasks.map(async (task) => {
-      let assignee = null;
-      if (task.assignee_id) {
-        const user = await db('users').where({ id: task.assignee_id }).first();
-        assignee = { id: user.id, name: user.name };
-      }
-      return { ...task, assignee };
-    })
-  );
+  const tasksWithDetails = tasks.map((task: any) => ({
+    ...task,
+    assignee: task.assignee_id
+      ? { id: task.assignee_id, name: task.assignee_name, email: task.assignee_email }
+      : null,
+  }));
+
+  // Remove extra fields from left join
+  tasksWithDetails.forEach((t: any) => {
+    delete t.assignee_name;
+    delete t.assignee_email;
+  });
 
   return {
     data: tasksWithDetails,
@@ -162,7 +170,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   }
 
   // Check if user has access to project
-  const hasAccess = await checkProjectAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this task');
   }
@@ -183,7 +191,7 @@ export async function deleteTask(taskId: string, userId: string) {
     throw new NotFoundError('Task not found');
   }
 
-  const hasAccess = await checkProjectAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this task');
   }
@@ -201,7 +209,7 @@ export async function updateTaskStatus(taskId: string, userId: string, status: s
     throw new NotFoundError('Task not found');
   }
 
-  const hasAccess = await checkProjectAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this task');
   }
@@ -222,7 +230,7 @@ export async function assignTask(taskId: string, userId: string, assigneeId: str
     throw new NotFoundError('Task not found');
   }
 
-  const hasAccess = await checkProjectAccess(userId, task.project_id);
+  const hasAccess = await hasProjectAccess(userId, task.project_id);
   if (!hasAccess) {
     throw new ForbiddenError('You do not have access to this task');
   }
@@ -244,23 +252,6 @@ export async function assignTask(taskId: string, userId: string, assigneeId: str
     });
 
   return getTaskById(taskId, userId);
-}
-
-// Helper functions
-async function checkProjectAccess(userId: string, projectId: string): Promise<boolean> {
-  const project = await db('projects')
-    .where({ id: projectId, deleted_at: null })
-    .first();
-  
-  if (!project) return false;
-  
-  if (project.owner_id === userId) return true;
-  
-  const member = await db('project_members')
-    .where({ project_id: projectId, user_id: userId })
-    .first();
-  
-  return !!member;
 }
 
 async function getAccessibleProjects(userId: string): Promise<any[]> {

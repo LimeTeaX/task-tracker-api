@@ -97,20 +97,24 @@ export async function listProjects(userId: string, filters: { status?: string; p
     .limit(limit)
     .offset(offset);
 
-  // Get members count for each project
-  const projectsWithCounts = await Promise.all(
-    projects.map(async (project) => {
-      const membersCount = await db('project_members')
-        .where({ project_id: project.id })
-        .count('id as count')
-        .first();
-      
-      return {
-        ...project,
-        members_count: parseInt(String(membersCount?.count || 0)),
-      };
-    })
-  );
+  // Get members count in a single query
+  const projectIds = projects.map((p) => p.id);
+  let membersCountMap: Record<string, number> = {};
+  if (projectIds.length > 0) {
+    const counts = await db('project_members')
+      .whereIn('project_id', projectIds)
+      .groupBy('project_id')
+      .select('project_id')
+      .count('id as count');
+    counts.forEach((row: any) => {
+      membersCountMap[row.project_id] = parseInt(String(row.count));
+    });
+  }
+
+  const projectsWithCounts = projects.map((project) => ({
+    ...project,
+    members_count: membersCountMap[project.id] || 0,
+  }));
 
   return {
     data: projectsWithCounts,

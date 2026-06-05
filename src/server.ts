@@ -21,7 +21,8 @@ async function startServer() {
   // Start server
   const server = app.listen(PORT, () => {
     logger.info(`🚀 Server running on http://localhost:${PORT}`);
-    logger.info(`📝 API Docs: http://localhost:${PORT}/api-docs`);
+    // TODO: Add Swagger/OpenAPI documentation
+    // logger.info(`📝 API Docs: http://localhost:${PORT}/api-docs`);
     logger.info(`❤️ Health check: http://localhost:${PORT}/health`);
   });
 

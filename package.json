@@ -29,7 +29,7 @@
     "jsonwebtoken": "^9.0.3",
     "knex": "^3.2.10",
     "pg": "^8.21.0",
-    "uuid": "^14.0.0",
+    "uuid": "^11.1.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {
@@ -42,28 +42,48 @@
     "@types/node": "^25.9.1",
     "@types/supertest": "^7.2.0",
     "jest": "^30.4.2",
-    "ts-jest": "^29.4.11",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
+    "ts-jest": "^29.4.11",
     "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/tests"],
-    "testMatch": ["**/tests/unit/**/*.test.ts"],
-    "moduleFileExtensions": ["ts", "js", "json"],
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.ts"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js",
+      "json"
+    ],
     "clearMocks": true,
     "collectCoverage": true,
     "coverageDirectory": "coverage",
-    "coverageReporters": ["text", "lcov"],
-    "collectCoverageFrom": ["src/**/*.ts", "!src/server.ts", "!src/database/**"],
-    "setupFiles": ["<rootDir>/tests/setup.ts"],
+    "coverageReporters": [
+      "text",
+      "lcov"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/server.ts",
+      "!src/database/**"
+    ],
+    "setupFiles": [
+      "<rootDir>/tests/setup.ts"
+    ],
     "transform": {
-      "^.+\\.ts$": ["ts-jest", {
-        "tsconfig": "tsconfig.test.json"
-      }]
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.test.json"
+        }
+      ]
     }
   }
 }

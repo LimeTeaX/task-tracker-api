@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { projectAPI, taskAPI, githubAPI, commentAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
-import TaskCard from '../components/TaskCard';
 import { SkeletonDetail } from '../components/Skeleton';
 import {
   DndContext, DragOverlay, closestCenter, useSensor, useSensors,
@@ -405,7 +404,7 @@ const ProjectDetail = () => {
                         ) : (
                           <div className="flex flex-col gap-2">
                             {columnTasks.map(task => (
-                              <SortableTaskCard key={task.id} task={task} onStatusChange={handleUpdateStatus} onDelete={handleDeleteTask} onEdit={handleOpenEdit} comments={comments} onOpenComments={handleOpenComments} />
+                               <SortableTaskCard key={task.id} task={task} onDelete={handleDeleteTask} onEdit={handleOpenEdit} comments={comments} onOpenComments={handleOpenComments} />
                             ))}
                           </div>
                         )}
@@ -733,7 +732,7 @@ function DroppableColumn({ id, label, count, borderColor, children }) {
 
 const STATUS_LABELS = { todo: 'To Do', in_progress: 'In Progress', review: 'Review', done: 'Done' };
 
-function SortableTaskCard({ task, onStatusChange, onDelete, onEdit, comments, onOpenComments }) {
+function SortableTaskCard({ task, onDelete, onEdit, comments, onOpenComments }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: { status: task.status },
