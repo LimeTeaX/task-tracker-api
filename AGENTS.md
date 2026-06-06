@@ -10,7 +10,7 @@ src/
 ├── server.ts                 # Entry point
 ├── config/                   # Database (Knex), Logger (Winston)
 ├── controllers/              # Route handlers (thin layer)
-├── middleware/                # Auth (JWT), Error handler, Request ID
+├── middleware/                # Auth (JWT), Error handler, Request ID, cookie-parser
 ├── repositories/             # Database queries (8 files: user, refreshToken,
 │                             #   project, projectMember, task, taskComment,
 │                             #   githubRepo, githubCommit)
@@ -18,7 +18,7 @@ src/
 ├── services/                 # Business logic (auth, project, task, comment, github)
 ├── utils/                    # jwt.util, hash.util, errors, access, param
 ├── validators/               # express-validator rules
-└── database/                 # Knex migrations (9) + seeds
+└── database/                 # Knex migrations (11) + seeds
 ```
 
 ### Frontend (React 19 + Vite + Tailwind CSS)
@@ -30,8 +30,8 @@ frontend/src/
 ├── pages/                    # Login, Register, Dashboard, ProjectDetail, NotFound
 ├── components/               # Navbar, Modal, Skeleton, ProtectedRoute, TaskBoard,
 │                             #   TaskColumn, SortableTaskCard, TaskForm, MemberList,
-│                             #   GitHubPanel, CommentSection, types.ts
-├── context/                  # AuthContext, ThemeContext
+│                             #   GitHubPanel, CommentSection, ConfirmModal
+├── context/                  # AuthContext, ThemeContext, ToastContext
 ├── services/                 # Axios API client (api.ts)
 └── types/                    # Shared TypeScript types
 ```
@@ -39,13 +39,14 @@ frontend/src/
 ## Key Decisions
 
 - **Database**: Neon PostgreSQL (serverless, ap-southeast-1). SSL required.
-- **Auth**: JWT access + refresh tokens. bcrypt (12 rounds).
+- **Auth**: JWT access (localStorage) + refresh (httpOnly cookie). bcrypt (12 rounds). Refresh token rotation on every refresh.
 - **Repository pattern**: All DB queries in `repositories/`, services call repositories.
 - **Access control**: Centralized in `utils/access.ts` — `hasProjectAccess()`, `isProjectManager()`.
 - **Testing**: Jest + ts-jest. Services mocked at `config/database` or `repositories` level.
 - **Route params**: All `:id` must be UUID v4 (validated by express-validator `isUUID()`).
 - **Comments routes**: Consolidated under `/api/v1/tasks/:id/comments` (in task.routes.ts).
 - **Error handling**: Custom error classes (NotFoundError, ForbiddenError, etc.) + `asyncHandler`.
+- **Toast/Confirm**: Custom ToastContext with auto-dismiss and slide-in animation; ConfirmModal wrapping shared Modal component — no notification library dependency.
 
 ## Testing
 

@@ -1,16 +1,41 @@
-# React + Vite
+# Task Tracker — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite + Tailwind CSS + React Router 7.
 
-Currently, two official plugins are available:
+## Pages
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Route | Page | Description |
+|-------|------|-------------|
+| `/login` | Login | Email + password login |
+| `/register` | Register | New user registration |
+| `/` | Dashboard | Project list with search/filter |
+| `/projects/:id` | ProjectDetail | Task board, members, GitHub, comments |
+| `*` | NotFound | 404 page |
 
-## React Compiler
+## Key Components
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Component | Description |
+|-----------|-------------|
+| `TaskBoard` | DndContext wrapper with drag-and-drop |
+| `TaskColumn` | Droppable column with count badge |
+| `SortableTaskCard` | Draggable task card with edit/delete |
+| `TaskForm` | Modal form for create/edit task |
+| `MemberList` | Team member management |
+| `GitHubPanel` | Link/unlink/sync repo + commits |
+| `CommentSection` | Comments modal per task |
+| `ConfirmModal` | Reusable confirmation dialog |
+| `ToastContext` | Toast notification system (auto-dismiss, slide-in) |
 
-## Expanding the ESLint configuration
+## Contexts
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **AuthContext** — login/logout, silent refresh via httpOnly cookie
+- **ThemeContext** — dark/light mode (Tailwind `dark:` class)
+- **ToastContext** — global toast notifications
+
+## Dev
+
+```bash
+npm run dev      # Vite dev server (port 5173, proxy /api → localhost:3000)
+npm run build    # Production build
+npm run lint     # ESLint
+```

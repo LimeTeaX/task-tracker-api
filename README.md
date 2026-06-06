@@ -8,8 +8,8 @@ Full-stack task management app with Kanban board, team collaboration, and GitHub
 |-------|-----------|
 | Backend | Express 5 + TypeScript + Knex.js + PostgreSQL (Neon) |
 | Frontend | React 19 + Vite + Tailwind CSS + React Router 7 |
-| Auth | JWT (access + refresh tokens), bcrypt (12 rounds) |
-| UI | Drag-and-drop (dnd-kit), Lucide icons, Dark mode |
+| Auth | JWT (access in memory, refresh in httpOnly cookie), bcrypt (12 rounds), refresh token rotation |
+| UI | Drag-and-drop (dnd-kit), Lucide icons, Dark mode, Toast notifications, Confirm modal |
 | Testing | Jest + ts-jest + Supertest (121 tests) |
 | Infra | Vercel (serverless), Neon PostgreSQL, Docker Compose |
 
@@ -73,29 +73,36 @@ vercel --prod
 
 ```
 src/
-├── app.ts                    # Express app setup
+├── app.ts                    # Express app setup (middleware, routes)
 ├── server.ts                 # Entry point
-├── config/                   # Database (Knex), Logger
-├── controllers/              # Route handlers
+├── api/                      # Vercel serverless entry point
+│   └── index.ts
+├── config/                   # Database (Knex), Logger (Winston)
+├── controllers/              # Route handlers (thin layer)
 ├── middleware/                # Auth (JWT), Error handler, Request ID
-├── repositories/             # Database queries (8 files)
-├── routes/v1/                # Route definitions
-├── services/                 # Business logic (5 files)
-├── utils/                    # jwt.util, hash.util, errors, access
+├── repositories/             # Database queries (8 files: user, refreshToken,
+│                             #   project, projectMember, task, taskComment,
+│                             #   githubRepo, githubCommit)
+├── routes/v1/                # Route definitions (auth, project, task, github)
+├── services/                 # Business logic (auth, project, task, comment, github)
+├── utils/                    # jwt.util, hash.util, errors, access, param
 ├── validators/               # express-validator rules
-└── database/                 # Knex migrations + seeds
+└── database/                 # Knex migrations (11) + seeds
 frontend/
 ├── src/
+│   ├── App.tsx               # Router + providers
+│   ├── main.tsx              # Entry point
 │   ├── pages/                # Login, Register, Dashboard, ProjectDetail, NotFound
-│   ├── components/           # Navbar, Modal, TaskBoard, TaskColumn, SortableTaskCard,
-│   │                         #   TaskForm, MemberList, GitHubPanel, CommentSection, ...
-│   ├── context/              # AuthContext, ThemeContext
-│   ├── services/             # Axios API client
+│   ├── components/           # Navbar, Modal, Skeleton, ProtectedRoute, TaskBoard,
+│   │                         #   TaskColumn, SortableTaskCard, TaskForm, MemberList,
+│   │                         #   GitHubPanel, CommentSection, ConfirmModal
+│   ├── context/              # AuthContext, ThemeContext, ToastContext
+│   ├── services/             # Axios API client (api.ts)
 │   └── types/                # Shared TypeScript types
 └── Dockerfile + nginx.conf
 tests/
-├── unit/services/            # 5 service test files (77 tests)
-└── integration/              # 5 endpoint test files (44 tests)
+├── unit/                     # 77 tests (auth, task, project, comment, github, errors, hash)
+└── integration/              # 44 tests (health, auth, projects, tasks, github)
 ```
 
 ## Environment Variables
@@ -108,7 +115,8 @@ tests/
 | `JWT_ACCESS_EXPIRY` | No | `15m` | Access token TTL |
 | `JWT_REFRESH_EXPIRY` | No | `7d` | Refresh token TTL |
 | `PORT` | No | `3000` | Server port |
-| `CORS_ORIGIN` | No | `*` | Allowed origins (comma-separated) |
+| `CORS_ORIGIN` | No | `*` | Allowed origins (comma-separated; cannot be `*` when using credentials) |
+| `VITE_API_URL` | No | `/api/v1` | Frontend API base URL (relative for Vercel, absolute for local dev) |
 | `NODE_ENV` | No | `development` | Environment mode |
 
 ## Testing
