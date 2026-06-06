@@ -142,10 +142,14 @@ export async function updateProject(projectId: string, userId: string, input: Up
     throw new ForbiddenError('Only project owner or manager can update this project');
   }
 
+  const cleanInput = Object.fromEntries(
+    Object.entries(input).filter(([_, v]) => v !== undefined)
+  );
+
   await db('projects')
     .where({ id: projectId })
     .update({
-      ...input,
+      ...cleanInput,
       updated_at: new Date(),
     });
 

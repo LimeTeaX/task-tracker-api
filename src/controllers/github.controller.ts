@@ -16,6 +16,8 @@ export async function linkRepoController(req: Request, res: Response) {
 }
 
 export async function unlinkRepoController(req: Request, res: Response) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) throw new ValidationError('Validation failed', errors.array());
   const projectId = getParamId(req.params);
   const result = await githubService.unlinkRepo(projectId, req.user!.id);
   res.status(200).json({ success: true, data: result });
@@ -38,6 +40,8 @@ export async function getCommitsController(req: Request, res: Response) {
 }
 
 export async function getLinkedRepoController(req: Request, res: Response) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) throw new ValidationError('Validation failed', errors.array());
   const projectId = getParamId(req.params);
   const result = await githubService.getLinkedRepo(projectId, req.user!.id);
   res.status(200).json({ success: true, data: result });

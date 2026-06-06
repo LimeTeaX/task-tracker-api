@@ -65,7 +65,7 @@ const Register = () => {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 dark:text-gray-200"
               required
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Minimal 8 karakter, 1 huruf besar, 1 angka, 1 simbol</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Min 8 characters, 1 uppercase, 1 number, 1 symbol</p>
           </div>
           <button
             type="submit"

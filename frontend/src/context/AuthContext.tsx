@@ -1,6 +1,9 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import { authAPI } from '../services/api';
 import { User, AuthContextType } from '../types';
+
+const API_BASE_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -15,19 +18,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
     const userData = localStorage.getItem('user');
+    const token = localStorage.getItem('accessToken');
+
     if (token && userData) {
-      setUser(JSON.parse(userData));
+      try {
+        setUser(JSON.parse(userData));
+        setLoading(false);
+      } catch {
+        localStorage.removeItem('user');
+        setLoading(false);
+      }
+    } else if (!token) {
+      // Try silent refresh via httpOnly cookie
+      axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true })
+        .then((response) => {
+          const { accessToken } = response.data.data;
+          localStorage.setItem('accessToken', accessToken);
+          const savedUser = localStorage.getItem('user');
+          if (savedUser) {
+            try { setUser(JSON.parse(savedUser)); } catch { /* ignore */ }
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('user');
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
     const response = await authAPI.login({ email, password });
-    const { accessToken, refreshToken, user } = response.data.data;
+    const { accessToken, user } = response.data.data;
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
     return response.data;
@@ -35,25 +61,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const register = async (email: string, password: string, name: string) => {
     const response = await authAPI.register({ email, password, name });
-    const { accessToken, refreshToken, user } = response.data.data;
+    const { accessToken, user } = response.data.data;
     localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
     localStorage.setItem('user', JSON.stringify(user));
     setUser(user);
     return response.data;
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      try {
-        await authAPI.logout({ refreshToken });
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
+    try {
+      await authAPI.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
     }
     localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     setUser(null);
   };

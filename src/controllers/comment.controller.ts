@@ -23,7 +23,7 @@ export async function getTaskCommentsController(req: Request, res: Response) {
 export async function deleteCommentController(req: Request, res: Response) {
   const errors = validationResult(req);
   if (!errors.isEmpty()) throw new ValidationError('Validation failed', errors.array());
-  const commentId = getParamId(req.params);
+  const commentId = req.params.commentId as string;
   const result = await commentService.deleteComment(commentId, req.user!.id);
   res.status(200).json({ success: true, data: result });
 }

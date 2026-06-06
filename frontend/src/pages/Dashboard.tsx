@@ -1,9 +1,11 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { projectAPI } from '../services/api';
 import Navbar from '../components/Navbar';
 import Modal from '../components/Modal';
+import ConfirmModal from '../components/ConfirmModal';
 import { SkeletonList } from '../components/Skeleton';
 import { Project } from '../types';
 
@@ -22,7 +24,17 @@ const Dashboard = () => {
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [form, setForm] = useState<{ name: string; description: string }>({ name: '', description: '' });
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    danger?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => { fetchProjects(); }, [filter]);
@@ -55,8 +67,9 @@ const Dashboard = () => {
       const response = await projectAPI.create(form);
       setProjects([response.data.data, ...projects]);
       setShowCreateModal(false);
+      showToast('Project created successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to create project');
+      showToast(error.response?.data?.error || 'Failed to create project', 'error');
     }
   };
 
@@ -67,33 +80,50 @@ const Dashboard = () => {
       setProjects(projects.map(p => p.id === editProject.id ? response.data.data : p));
       setShowEditModal(false);
       setEditProject(null);
+      showToast('Project updated successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to update project');
+      showToast(error.response?.data?.error || 'Failed to update project', 'error');
     }
   };
 
   const handleArchive = async (project: Project) => {
     const newStatus = project.status === 'archived' ? 'active' : 'archived';
     const label = newStatus === 'archived' ? 'archive' : 'unarchive';
-    if (window.confirm(`Are you sure you want to ${label} "${project.name}"?`)) {
-      try {
-        const response = await projectAPI.update(project.id, { status: newStatus });
-        setProjects(projects.map(p => p.id === project.id ? response.data.data : p));
-      } catch (error: any) {
-        alert(error.response?.data?.error || `Failed to ${label} project`);
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: `${label} project`,
+      message: `Are you sure you want to ${label} "${project.name}"?`,
+      danger: false,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          const response = await projectAPI.update(project.id, { status: newStatus });
+          setProjects(projects.map(p => p.id === project.id ? response.data.data : p));
+          showToast(`Project ${label}d successfully`, 'success');
+        } catch (error: any) {
+          showToast(error.response?.data?.error || `Failed to ${label} project`, 'error');
+        }
+      },
+    });
   };
 
   const handleDelete = async (projectId: string) => {
-    if (window.confirm('Are you sure you want to permanently delete this project?')) {
-      try {
-        await projectAPI.delete(projectId);
-        setProjects(projects.filter(p => p.id !== projectId));
-      } catch (error: any) {
-        alert(error.response?.data?.error || 'Failed to delete project');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete project',
+      message: 'Are you sure you want to permanently delete this project?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await projectAPI.delete(projectId);
+          setProjects(projects.filter(p => p.id !== projectId));
+          showToast('Project deleted successfully', 'success');
+        } catch (error: any) {
+          showToast(error.response?.data?.error || 'Failed to delete project', 'error');
+        }
+      },
+    });
   };
 
   return (
@@ -237,6 +267,17 @@ const Dashboard = () => {
           <button onClick={handleUpdate} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Yes"
+        cancelText="Cancel"
+        danger={confirmDialog.danger}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 };

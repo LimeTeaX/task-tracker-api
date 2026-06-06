@@ -36,6 +36,11 @@ export async function getTaskController(req: Request, res: Response) {
 }
 
 export async function listTasksController(req: Request, res: Response) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw new ValidationError('Validation failed', errors.array());
+  }
+
   const result = await taskService.listTasks(req.user!.id, {
     projectId: req.query.projectId as string,
     status: req.query.status as string,

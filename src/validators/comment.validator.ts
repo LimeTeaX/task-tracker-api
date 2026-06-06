@@ -21,5 +21,8 @@ export const taskIdParamValidator = [
 export const deleteCommentValidator = [
   param('id')
     .isUUID()
+    .withMessage('Invalid task ID'),
+  param('commentId')
+    .isUUID()
     .withMessage('Invalid comment ID'),
 ];

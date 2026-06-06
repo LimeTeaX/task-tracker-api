@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { projectAPI, taskAPI, githubAPI, commentAPI } from '../services/api';
 import Navbar from '../components/Navbar';
+import ConfirmModal from '../components/ConfirmModal';
 import { SkeletonDetail } from '../components/Skeleton';
 import TaskBoard from '../components/TaskBoard';
 import TaskForm from '../components/TaskForm';
@@ -12,7 +14,8 @@ import CommentSection from '../components/CommentSection';
 import type { Task, TaskFormData, TaskFilters, TaskStatus, Member, Repo, Commit, Comment } from '../types';
 
 const ProjectDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: projectId } = useParams<{ id: string }>();
+  const id = projectId!;
   const [project, setProject] = useState<any>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -32,7 +35,16 @@ const ProjectDetail = () => {
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [showCommentModal, setShowCommentModal] = useState<string | null>(null);
 
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    danger?: boolean;
+  }>({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+
   const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const isOwner = project?.owner_id === user?.id;
@@ -116,8 +128,9 @@ const ProjectDetail = () => {
       setTasks([response.data.data, ...tasks]);
       setShowTaskModal(false);
       setTaskFormData(undefined);
+      showToast('Task created successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to create task');
+      showToast(error.response?.data?.error || 'Failed to create task', 'error');
     }
   };
 
@@ -134,26 +147,35 @@ const ProjectDetail = () => {
       setShowEditTaskModal(false);
       setEditingTask(null);
       setTaskFormData(undefined);
+      showToast('Task updated successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to update task');
+      showToast(error.response?.data?.error || 'Failed to update task', 'error');
     }
   };
 
   const handleStatusChange = async (taskId: string, status: TaskStatus) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));
     try { await taskAPI.updateStatus(taskId, status); }
-    catch (error: any) { alert(error.response?.data?.error || 'Failed to update status'); fetchTasks(); }
+    catch (error: any) { showToast(error.response?.data?.error || 'Failed to update status', 'error'); fetchTasks(); }
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if (window.confirm('Delete this task?')) {
-      try {
-        await taskAPI.delete(taskId);
-        setTasks(tasks.filter(t => t.id !== taskId));
-      } catch (error: any) {
-        alert(error.response?.data?.error || 'Failed to delete task');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete task',
+      message: 'Are you sure you want to delete this task?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await taskAPI.delete(taskId);
+          setTasks(tasks.filter(t => t.id !== taskId));
+          showToast('Task deleted successfully', 'success');
+        } catch (error: any) {
+          showToast(error.response?.data?.error || 'Failed to delete task', 'error');
+        }
+      },
+    });
   };
 
   const handleAddMember = async (email: string) => {
@@ -165,41 +187,59 @@ const ProjectDetail = () => {
       } else {
         fetchMembers();
       }
+      showToast('Member added successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to add member');
+      showToast(error.response?.data?.error || 'Failed to add member', 'error');
     }
   };
 
   const handleRemoveMember = async (userId: string) => {
-    if (window.confirm('Remove this member?')) {
-      try {
-        await projectAPI.removeMember(id, userId);
-        setMembers(members.filter(m => m.id !== userId));
-      } catch (error: any) {
-        alert(error.response?.data?.error || 'Failed to remove member');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remove member',
+      message: 'Are you sure you want to remove this member?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await projectAPI.removeMember(id, userId);
+          setMembers(members.filter(m => m.id !== userId));
+          showToast('Member removed successfully', 'success');
+        } catch (error: any) {
+          showToast(error.response?.data?.error || 'Failed to remove member', 'error');
+        }
+      },
+    });
   };
 
   const handleLinkRepo = async (repoUrl: string) => {
     try {
       const response = await githubAPI.link(id, repoUrl);
       setRepo(response.data.data);
+      showToast('Repository linked successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to link repository');
+      showToast(error.response?.data?.error || 'Failed to link repository', 'error');
     }
   };
 
   const handleUnlinkRepo = async () => {
-    if (window.confirm('Unlink this repository?')) {
-      try {
-        await githubAPI.unlink(id);
-        setRepo(null);
-        setCommits([]);
-      } catch (error: any) {
-        alert(error.response?.data?.error || 'Failed to unlink repository');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Unlink repository',
+      message: 'Are you sure you want to unlink this repository?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await githubAPI.unlink(id);
+          setRepo(null);
+          setCommits([]);
+          showToast('Repository unlinked successfully', 'success');
+        } catch (error: any) {
+          showToast(error.response?.data?.error || 'Failed to unlink repository', 'error');
+        }
+      },
+    });
   };
 
   const handleSyncCommits = async () => {
@@ -207,8 +247,9 @@ const ProjectDetail = () => {
     try {
       await githubAPI.sync(id);
       await fetchCommits();
+      showToast('Commits synced successfully', 'success');
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to sync commits');
+      showToast(error.response?.data?.error || 'Failed to sync commits', 'error');
     } finally { setSyncing(false); }
   };
 
@@ -223,19 +264,26 @@ const ProjectDetail = () => {
       await commentAPI.create(showCommentModal, comment);
       await fetchComments(showCommentModal);
     } catch (error: any) {
-      alert(error.response?.data?.error || 'Failed to add comment');
+      showToast(error.response?.data?.error || 'Failed to add comment', 'error');
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (window.confirm('Delete this comment?')) {
-      try {
-        await commentAPI.delete(commentId);
-        if (showCommentModal) await fetchComments(showCommentModal);
-      } catch (error: any) {
-        alert(error.response?.data?.error || 'Failed to delete comment');
-      }
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete comment',
+      message: 'Are you sure you want to delete this comment?',
+      danger: true,
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+        try {
+          await commentAPI.delete(showCommentModal!, commentId);
+          if (showCommentModal) await fetchComments(showCommentModal);
+        } catch (error: any) {
+          showToast(error.response?.data?.error || 'Failed to delete comment', 'error');
+        }
+      },
+    });
   };
 
   if (loading) {
@@ -343,7 +391,7 @@ const ProjectDetail = () => {
               )}
             </div>
 
-            <p className="text-xs text-gray-400 mb-3">Drag task antar kolom untuk ubah status, atau pilih dari dropdown</p>
+            <p className="text-xs text-gray-400 mb-3">Drag tasks between columns to change status</p>
             <TaskBoard
               tasks={tasks}
               onStatusChange={handleStatusChange}
@@ -412,6 +460,17 @@ const ProjectDetail = () => {
         onAddComment={handleAddComment}
         onDeleteComment={handleDeleteComment}
         onClose={() => setShowCommentModal(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText="Yes"
+        cancelText="Cancel"
+        danger={confirmDialog.danger}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );

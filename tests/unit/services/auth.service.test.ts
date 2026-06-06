@@ -145,7 +145,7 @@ describe('auth.service', () => {
   });
 
   describe('refreshAccessToken', () => {
-    it('should return new access token for valid refresh token', async () => {
+    it('should rotate refresh token and return new tokens', async () => {
       (refreshTokenRepo.findValidByToken as jest.Mock).mockResolvedValue({
         id: 'token-id',
         user_id: 'fixed-uuid',
@@ -157,7 +157,17 @@ describe('auth.service', () => {
 
       const result = await authService.refreshAccessToken('valid-refresh-token');
 
-      expect(result).toEqual({ accessToken: 'mock-access-token' });
+      expect(refreshTokenRepo.deleteByToken).toHaveBeenCalledWith('valid-refresh-token');
+      expect(refreshTokenRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: 'fixed-uuid',
+          token: 'mock-refresh-token',
+        })
+      );
+      expect(result).toEqual({
+        accessToken: 'mock-access-token',
+        refreshToken: 'mock-refresh-token',
+      });
     });
 
     it('should throw UnauthorizedError for invalid or expired refresh token', async () => {

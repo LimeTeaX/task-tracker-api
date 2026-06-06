@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import { v4 as uuidv4 } from 'uuid';
 import { errorHandler } from './middleware/errorHandler.middleware';
 import { logger } from './config/logger';
@@ -18,9 +19,10 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const corsOrigin = process.env.CORS_ORIGIN?.split(',') || '*';
 app.use(cors({
-  origin: process.env.CORS_ORIGIN?.split(',') || '*',
-  credentials: true,
+  origin: corsOrigin,
+  credentials: corsOrigin !== '*',
 }));
 
 // Rate limiting
@@ -36,6 +38,9 @@ app.use('/api', limiter);
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cookie parser
+app.use(cookieParser());
 
 // Request ID
 app.use((req, res, next) => {

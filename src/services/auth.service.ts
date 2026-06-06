@@ -101,8 +101,21 @@ export async function refreshAccessToken(refreshToken: string) {
     throw new UnauthorizedError('User not found');
   }
 
+  // Rotate refresh token: delete old, issue new
+  await refreshTokenRepo.deleteByToken(refreshToken);
+
   const payload = { id: user.id, email: user.email, role: user.role };
   const newAccessToken = generateAccessToken(payload);
+  const newRefreshToken = generateRefreshToken(payload);
 
-  return { accessToken: newAccessToken };
+  const refreshTokenId = uuidv4();
+  await refreshTokenRepo.create({
+    id: refreshTokenId,
+    user_id: user.id,
+    token: newRefreshToken,
+    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    created_at: new Date(),
+  });
+
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 }

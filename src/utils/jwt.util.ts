@@ -35,12 +35,3 @@ export function verifyAccessToken(token: string): TokenPayload | null {
     return null;
   }
 }
-
-export function verifyRefreshToken(token: string): TokenPayload | null {
-  try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET);
-    return decoded as TokenPayload;
-  } catch (error) {
-    return null;
-  }
-}

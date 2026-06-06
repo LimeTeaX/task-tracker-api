@@ -5,6 +5,7 @@ const API_BASE_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:3
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -22,21 +23,13 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
-        try {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-          const { accessToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        } catch {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
-        }
-      } else {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+        const { accessToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
@@ -50,7 +43,7 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data: Record<string, unknown>) => api.post('/auth/register', data),
   login: (data: Record<string, unknown>) => api.post('/auth/login', data),
-  logout: (data: Record<string, unknown>) => api.post('/auth/logout', data),
+  logout: () => api.post('/auth/logout'),
 };
 
 export const projectAPI = {

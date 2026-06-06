@@ -38,6 +38,11 @@ export async function getProjectController(req: Request, res: Response) {
 }
 
 export async function listProjectsController(req: Request, res: Response) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    throw new ValidationError('Validation failed', errors.array());
+  }
+
   const result = await projectService.listProjects(req.user!.id, {
     status: req.query.status as string,
     page: req.query.page ? parseInt(req.query.page as string) : undefined,

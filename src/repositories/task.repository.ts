@@ -56,7 +56,24 @@ export async function findById(id: string): Promise<TaskRecord | undefined> {
   return db('tasks').where({ id, deleted_at: null }).first();
 }
 
-export async function findByIdWithUsers(id: string): Promise<any | undefined> {
+export interface TaskWithAssignee {
+  id: string;
+  title: string;
+  description: string | null;
+  project_id: string;
+  priority: string;
+  due_date: Date | null;
+  assignee_id: string | null;
+  created_by: string;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+  deleted_at: Date | null;
+  assignee: { id: string; name: string; email: string } | null;
+  created_by_name?: string;
+}
+
+export async function findByIdWithUsers(id: string): Promise<TaskWithAssignee | undefined> {
   const task = await db('tasks')
     .where('tasks.id', id)
     .select(
@@ -83,7 +100,7 @@ export async function findByIdWithUsers(id: string): Promise<any | undefined> {
 
 export async function findByFilters(
   filters: TaskFilters
-): Promise<{ data: any[]; total: number }> {
+): Promise<{ data: TaskWithAssignee[]; total: number }> {
   const { projectIds, status, priority, assigneeId, page, limit } = filters;
   const offset = (page - 1) * limit;
 
@@ -128,7 +145,7 @@ export async function findByFilters(
     assignee_email: undefined,
   }));
 
-  return { data, total };
+  return { data: data as TaskWithAssignee[], total };
 }
 
 export async function update(id: string, data: Partial<TaskUpdateInput>): Promise<void> {

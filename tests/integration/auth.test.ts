@@ -28,7 +28,7 @@ describe('Auth API', () => {
   };
 
   describe('POST /api/v1/auth/register', () => {
-    it('should register a new user and return tokens', async () => {
+    it('should register a new user and return access token', async () => {
       (authService.register as jest.Mock).mockResolvedValueOnce({
         user: mockUser,
         ...mockTokens,
@@ -42,7 +42,7 @@ describe('Auth API', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.user).toHaveProperty('id');
       expect(res.body.data.accessToken).toBeDefined();
-      expect(res.body.data.refreshToken).toBeDefined();
+      expect(res.body.data.refreshToken).toBeUndefined();
     });
 
     it('should reject duplicate email', async () => {
@@ -86,7 +86,7 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/v1/auth/login', () => {
-    it('should login and return tokens', async () => {
+    it('should login and return access token', async () => {
       (authService.login as jest.Mock).mockResolvedValueOnce({
         user: mockUser,
         ...mockTokens,
@@ -99,7 +99,7 @@ describe('Auth API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.accessToken).toBeDefined();
-      expect(res.body.data.refreshToken).toBeDefined();
+      expect(res.body.data.refreshToken).toBeUndefined();
     });
 
     it('should reject wrong password', async () => {
@@ -125,44 +125,47 @@ describe('Auth API', () => {
   });
 
   describe('POST /api/v1/auth/logout', () => {
-    it('should logout successfully', async () => {
+    it('should logout successfully with cookie', async () => {
       (authService.logout as jest.Mock).mockResolvedValueOnce(true);
 
       const res = await request(app)
         .post('/api/v1/auth/logout')
-        .send({ refreshToken: 'mock-refresh-token' });
+        .set('Cookie', ['refreshToken=mock-refresh-token'])
+        .send();
 
       expect(res.status).toBe(204);
     });
 
-    it('should reject missing refresh token', async () => {
+    it('should return 204 even without cookie', async () => {
       const res = await request(app)
         .post('/api/v1/auth/logout')
-        .send({});
+        .send();
 
-      expect(res.status).toBe(422);
+      expect(res.status).toBe(204);
     });
   });
 
   describe('POST /api/v1/auth/refresh', () => {
-    it('should refresh access token', async () => {
+    it('should refresh access token with cookie', async () => {
       (authService.refreshAccessToken as jest.Mock).mockResolvedValueOnce({
         accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
       });
 
       const res = await request(app)
         .post('/api/v1/auth/refresh')
-        .send({ refreshToken: 'mock-refresh-token' });
+        .set('Cookie', ['refreshToken=mock-refresh-token'])
+        .send();
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.accessToken).toBeDefined();
     });
 
-    it('should reject missing refresh token', async () => {
+    it('should reject missing refresh token cookie', async () => {
       const res = await request(app)
         .post('/api/v1/auth/refresh')
-        .send({});
+        .send();
 
       expect(res.status).toBe(422);
     });

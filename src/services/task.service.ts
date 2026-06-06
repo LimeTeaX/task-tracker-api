@@ -117,7 +117,11 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     throw new ForbiddenError('You do not have access to this task');
   }
 
-  await taskRepo.update(taskId, { ...input, updated_at: new Date() });
+  const cleanInput = Object.fromEntries(
+    Object.entries(input).filter(([_, v]) => v !== undefined)
+  );
+
+  await taskRepo.update(taskId, { ...cleanInput, updated_at: new Date() });
 
   return getTaskById(taskId, userId);
 }
